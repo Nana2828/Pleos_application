@@ -26,6 +26,15 @@ data class CourseMatchParams(
     val maxCourseSpeedMps: Double = 40.0,
     /** 커버리지를 잴 때 코스 선을 이 간격으로 나눈다. */
     val coverageStepM: Double = 10.0,
+    /**
+     * 차가 움직이는 방향과 코스 방향이 이보다 많이 다르면 그 구간과 맞춰 보지 않는다.
+     * 코스를 거꾸로 달리거나, 8자처럼 교차하는 곳에서 다른 방향 구간에 붙는 것을 막는다.
+     */
+    val maxHeadingDiffDeg: Double = 90.0,
+    /** 진행 방향은 이 거리 이상 움직였을 때만 새로 잰다. 정차 중 GPS 흔들림으로 방향이 튀지 않게 한다. */
+    val headingMinMoveM: Double = 8.0,
+    /** 위치가 이보다 오래 끊기면 방향을 잊는다. 끊긴 앞뒤 점을 이은 방향은 실제 방향이 아니다(터널). */
+    val headingMaxGapMs: Long = 5_000,
 )
 
 sealed interface CourseEvent {
@@ -51,6 +60,10 @@ class CourseTracker(
         for (i in 1 until shape.size) cum[i] = cum[i - 1] + distanceM(shape[i - 1], shape[i])
     }
     private val totalM = cumulative.last()
+    /** shape 각 구간의 방위각. 길이 0 구간은 null. */
+    private val segmentBearings: Array<Int?> = Array(shape.size - 1) { i ->
+        if (cumulative[i + 1] - cumulative[i] > 0.0) bearingDeg(shape[i], shape[i + 1]) else null
+    }
 
     var phase: Phase = Phase.WAITING
         private set
@@ -73,11 +86,31 @@ class CourseTracker(
     private var lastMatchMs = 0L
     private var pointsTotal = 0
     private var pointsInCorridor = 0
+    private var headingFrom: GeoPoint? = null
+    private var lastPointMs: Long? = null
+    /** 차가 움직이는 방향(방위각). 아직 모르면 null. */
+    private var heading: Int? = null
 
-    fun update(timeMs: Long, point: GeoPoint): CourseEvent? = when (phase) {
-        Phase.WAITING -> waitForEntry(timeMs, point)
-        Phase.ON_COURSE -> follow(timeMs, point)
-        Phase.FINISHED -> null
+    fun update(timeMs: Long, point: GeoPoint): CourseEvent? {
+        updateHeading(timeMs, point)
+        return when (phase) {
+            Phase.WAITING -> waitForEntry(timeMs, point)
+            Phase.ON_COURSE -> follow(timeMs, point)
+            Phase.FINISHED -> null
+        }
+    }
+
+    private fun updateHeading(timeMs: Long, point: GeoPoint) {
+        val gap = lastPointMs?.let { timeMs - it > params.headingMaxGapMs } ?: false
+        lastPointMs = timeMs
+        val from = headingFrom
+        if (from == null || gap) {
+            heading = null
+            headingFrom = point
+        } else if (distanceM(from, point) >= params.headingMinMoveM) {
+            heading = bearingDeg(from, point)
+            headingFrom = point
+        }
     }
 
     private fun waitForEntry(timeMs: Long, point: GeoPoint): CourseEvent? {
@@ -113,6 +146,13 @@ class CourseTracker(
         if (match != null && match.distanceM <= corridor) {
             progressM = max(progressM, match.alongM)
             lastMatchMs = timeMs
+        } else if (pointToLineM(point, shape) <= corridor &&
+            project(point, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY).let { it == null || it.distanceM > corridor }
+        ) {
+            // 코스 선 위에 있지만 어느 구간과도 방향이 안 맞는다 = 코스를 거꾸로 달리고 있다.
+            // 이때 앞으로 볼 거리를 늘리면, 선이 다시 만나는 곳(고리 출발점, 하트 꼭짓점)에서 진행률이 건너뛴다.
+            // 그래서 기준 시각을 지금으로 당겨 늘어나지 않게 한다. 터널(위치 없음)·코스 밖 우회·앞쪽 합류는 그대로 늘어난다.
+            lastMatchMs = timeMs
         }
         val atDestination = distanceM(point, course.destination.point) <= params.finishRadiusM
         if (atDestination && progressRatio >= params.minFinishProgressRatio) {
@@ -140,9 +180,18 @@ class CourseTracker(
             val p = projectToSegment(point, shape[i], shape[i + 1])
             val along = segStart + p.t * (segEnd - segStart)
             if (along < minAlong || along > maxAlong) continue
+            if (!sameDirection(segmentBearings[i])) continue
             if (best == null || p.distanceM < best.distanceM) best = Match(along, p.distanceM)
         }
         return best
+    }
+
+    /** 차 방향을 아직 모르거나 구간 방향을 모르면 맞춰 본다. */
+    private fun sameDirection(segmentBearing: Int?): Boolean {
+        val h = heading ?: return true
+        val b = segmentBearing ?: return true
+        val diff = Math.floorMod(h - b + 180, 360) - 180
+        return kotlin.math.abs(diff) <= params.maxHeadingDiffDeg
     }
 }
 

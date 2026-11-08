@@ -185,6 +185,12 @@ class DriveSession(
         lastSpeedMs = signal.timeMs
     }
 
+    /** 최근 속도 신호가 "멈춤"이면 true. 속도 신호가 없거나 오래됐으면 모른다고 보고 false. */
+    private fun isStopped(time: Long): Boolean {
+        val kph = lastSpeedKph ?: return false
+        return kph < limits.movingKph && time - lastSpeedMs <= limits.speedStaleMs
+    }
+
     private fun handlePosition(signal: DriveSignal.Position) {
         val accuracy = signal.accuracyM
         if (accuracy != null && accuracy > limits.maxAccuracyM) return
@@ -215,7 +221,8 @@ class DriveSession(
                 gapDistanceM += speedSinceFixM
                 segments.add(arrayListOf(TrackPoint(signal.timeMs, signal.point)))
             }
-            step >= limits.minStepM -> {
+            // 속도가 "멈춤"이면 GPS가 흔들려도 거리를 더하지 않는다(신호 대기 중 흔들림이 거리로 쌓이는 문제).
+            step >= limits.minStepM && !isStopped(signal.timeMs) -> {
                 gpsDistanceM += step
                 current.add(TrackPoint(signal.timeMs, signal.point))
             }
