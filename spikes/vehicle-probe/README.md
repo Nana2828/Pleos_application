@@ -51,6 +51,30 @@ SDK 매니페스트가 `ai.pleos.playground.service.vehicle.VEHICLE_BINDING` 권
 
 `tools/console_drive.py`가 이를 묶어 "기어 D → 직진 → 누적거리·배터리 감소 → 기어 P"를 합니다. C의 가상주행이 같은 방식을 쓰면 앱은 실제 SDK 경로로 값을 받습니다.
 
+### 코스 모양대로 달리기 (`tools/course_drive.py`, 2026-11-08 추가)
+
+`console_drive.py`는 동쪽 직선만 달립니다. `course_drive.py`는 **규격 ① 코스 JSON의 모양을 따라** 위치를 옮기고, 같은 때에 속도·누적 주행거리·배터리도 넣습니다.
+
+```sh
+python -I tools/course_drive.py "$(command -v adb)" tools/courses/test-heart.json --kph 60
+python -I tools/course_drive.py "$(command -v adb)" tools/courses/sample-loop.json --kph 50 --approach-m 300 --log tools/recordings/run.jsonl
+```
+
+| 옵션 | 뜻 |
+|---|---|
+| `--kph 60` | 주행 속도 |
+| `--corner-kph 30` | 크게 꺾이는 곳(45도 이상) 앞뒤 40m는 이 속도로. `0`이면 감속 안 함 |
+| `--approach-m 300` | 코스 시작점 전 코스 밖에서 이만큼 달려 들어옴 (코스 진입 판정 시험용) |
+| `--log <경로>` | 보낸 값을 규격 ② 주행 신호 JSONL로 저장 (앱 계산 코드 시험 데이터) |
+| `--no-vehicle` | 누적 주행거리·배터리는 건드리지 않음 |
+
+- 시험용 코스: `tools/courses/test-heart.json`(하트, 3.83km, `make_heart_course.py`로 생성, 도로를 따르지 않음), `tools/courses/sample-loop.json`(규격 예시 파일 복사본)
+- **결과 (에뮬레이터, 이전 시험 앱 route-draw로 기록):** 하트 코스를 60km/h로 달리자 지도에 하트 궤적이 그려졌습니다. 스크립트가 옮긴 거리 3,826m, 앱 기록 3,817m(0.2% 차이: 1초 간격 점을 직선으로 이어 곡선 안쪽을 지나기 때문).
+- 위치는 매초 실제 경과 시간만큼 옮깁니다. 콘솔·adb 호출이 느려져도 거리가 어긋나지 않습니다.
+- 에뮬레이터 내비는 이 위치를 따라가지 않습니다. 앱의 기록·궤적 시험용입니다.
+
+> 참고: 이전 직선 스크립트(route-draw `drive_console.py`)가 끝에 출력하던 "직진 약 1.05km"는 **멈춘 뒤 2~3초까지 거리로 셌던 출력 오류**입니다. 앱 기록 996m가 맞습니다(마지막 위치 점이 출발점에서 정확히 996m). `course_drive.py`는 실제로 옮긴 거리를 출력합니다.
+
 ## 4. 실행 방법 (Windows, Git Bash)
 
 ```sh
@@ -78,4 +102,7 @@ python -I tools/console_drive.py "$(command -v adb)" 120 90 6.0 70   # 120초, 9
 | `PleosReader.kt` | Vehicle SDK 읽기·지원 확인·이벤트 | 필요한 부분만 래퍼로 |
 | `AaosReader.kt` | AAOS Car API 읽기 | 필요한 부분만 래퍼로 |
 | `ProbeActivity.kt` | 시험 화면(로그) | ❌ |
-| `tools/console_drive.py` | 콘솔 가상주행 | C와 상의 |
+| `tools/console_drive.py` | 콘솔 가상주행 (직선) | C와 상의 |
+| `tools/course_drive.py` | 콘솔 가상주행 (코스 모양대로, 신호 기록 저장) | C와 상의 |
+| `tools/make_heart_course.py`, `tools/courses/` | 시험용 코스 JSON | ❌ (시험용) |
+| `tools/recordings/` | 가상주행 때 보낸 신호 기록 (규격 ②) | 앱 코어 시험 데이터로 |
