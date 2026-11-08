@@ -4,7 +4,9 @@
 하트 곡선은 이전 시험 앱(route-draw)의 '샘플 하트'와 같은 식이다.
 
 usage:
-  python -I make_heart_course.py <출력 경로> [중심 위도=37.3950] [중심 경도=127.1110] [크기 m=600]
+  python -I make_heart_course.py <출력 경로> [중심 위도=37.3950] [중심 경도=127.1110] [크기 m=600] [모양=heart|figure8]
+
+figure8은 스스로 한 번 교차하는 8자 코스다. 코스 판정이 교차점에서 헷갈리는지 시험한다.
 """
 import json
 import math
@@ -32,6 +34,19 @@ def heart(lat0, lon0, radius_m, n=120):
     return out
 
 
+def figure8(lat0, lon0, radius_m, n=160):
+    """제르노 렘니스케이트(8자). 가운데에서 한 번 교차한다. 시작점은 오른쪽 끝."""
+    m_lat = 111_320.0
+    m_lon = m_lat * math.cos(math.radians(lat0))
+    out = []
+    for i in range(n + 1):
+        t = 2 * math.pi * i / n
+        x = radius_m * math.cos(t)
+        y = radius_m * math.sin(t) * math.cos(t)
+        out.append((round(lat0 + y / m_lat, 6), round(lon0 + x / m_lon, 6)))
+    return out
+
+
 def main():
     if len(sys.argv) < 2:
         print(__doc__)
@@ -39,7 +54,8 @@ def main():
     lat0 = float(sys.argv[2]) if len(sys.argv) > 2 else 37.3950
     lon0 = float(sys.argv[3]) if len(sys.argv) > 3 else 127.1110
     size = float(sys.argv[4]) if len(sys.argv) > 4 else 600.0
-    pts = heart(lat0, lon0, size)
+    shape = sys.argv[5] if len(sys.argv) > 5 else "heart"
+    pts = figure8(lat0, lon0, size) if shape == "figure8" else heart(lat0, lon0, size)
     length = sum(dist_m(a, b) for a, b in zip(pts, pts[1:]))
     third = len(pts) // 3
 
@@ -48,10 +64,10 @@ def main():
 
     course = {
         "schema": "course/1",
-        "course_id": "test-heart",
+        "course_id": f"test-{shape}",
         "region": "시험",
         "label": "A",
-        "name": "시험용 하트 코스 (도로를 따르지 않는 가상주행 시험용)",
+        "name": f"시험용 {'8자' if shape == 'figure8' else '하트'} 코스 (도로를 따르지 않는 가상주행 시험용)",
         # GeoJSON은 [경도, 위도] 순서다.
         "shape": {"type": "LineString", "coordinates": [[p[1], p[0]] for p in pts]},
         "start": place(pts[0], "출발"),

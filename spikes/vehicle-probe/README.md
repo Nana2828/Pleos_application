@@ -67,6 +67,15 @@ python -I tools/course_drive.py "$(command -v adb)" tools/courses/sample-loop.js
 | `--approach-m 300` | 코스 시작점 전 코스 밖에서 이만큼 달려 들어옴 (코스 진입 판정 시험용) |
 | `--log <경로>` | 보낸 값을 규격 ② 주행 신호 JSONL로 저장 (앱 계산 코드 시험 데이터) |
 | `--no-vehicle` | 누적 주행거리·배터리는 건드리지 않음 |
+| `--reverse` | 코스를 거꾸로 달림 |
+| `--shortcut 800:3000` | 코스 800m 지점에서 3,000m 지점으로 곧게 건너뜀 (지름길) |
+| `--tunnel 1200:800` | 달린 거리 1,200m부터 800m 동안 위치를 안 보냄 (터널. 속도는 보냄) |
+| `--stops 500:40,2000:60` | 500m에서 40초, 2,000m에서 60초 멈춤 (신호 대기) |
+| `--gps-noise 4` | 위치에 표준편차 4m 흔들림 (멈춰 있을 때도) |
+| `--dry-run` | 에뮬레이터 없이 `--log` 파일만 바로 만듦 (가짜 시간). 앱 계산 코드 디버그용 |
+
+- 8자 코스(스스로 한 번 교차)도 만들 수 있습니다: `python -I tools/make_heart_course.py tools/courses/test-figure8.json 37.3950 127.1110 900 figure8`
+- 까다로운 상황 기록으로 앱 계산 코드(`spikes/drive-core`)의 버그 2개를 찾았습니다(정차 중 GPS 흔들림이 거리로 쌓임, 거꾸로 달려도 완주). 자세한 것은 그쪽 README "디버그 기록".
 
 - 시험용 코스: `tools/courses/test-heart.json`(하트, 3.83km, `make_heart_course.py`로 생성, 도로를 따르지 않음), `tools/courses/sample-loop.json`(규격 예시 파일 복사본)
 - **결과 (에뮬레이터, 이전 시험 앱 route-draw로 기록):** 하트 코스를 60km/h로 달리자 지도에 하트 궤적이 그려졌습니다. 스크립트가 옮긴 거리 3,826m, 앱 기록 3,817m(0.2% 차이: 1초 간격 점을 직선으로 이어 곡선 안쪽을 지나기 때문).
