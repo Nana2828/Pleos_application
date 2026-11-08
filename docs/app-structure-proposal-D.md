@@ -1,7 +1,7 @@
 # 앱 코어 구조와 1차 시연 앱 계획 (D 제안)
 
 > 💡 **회의 안건용 제안입니다.** 확정이 아니며, 회의에서 3장·5장·6장을 정하면 그대로 `app/`을 만듭니다.
-> 작성 2026-11-08 · D · 근거: `docs/scenario-flow.md`, `docs/team-roles.md`, `docs/data-contracts.md`, `docs/AI_CONTEXT_D.md`
+> 작성 2026-11-08 · D · 근거: `docs/scenario-flow.md`, `docs/team-roles.md`, `docs/data-contracts.md`
 
 ## 1. 한눈에
 

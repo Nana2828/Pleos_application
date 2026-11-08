@@ -2,7 +2,7 @@
 
 > **받는 사람:** A (기획서 취합 담당)
 > **상태:** D 초안, 팀 검토 전. 확정된 문구가 아닙니다. `💡 제안`과 `⬜ 합의 필요` 표시는 회의에서 정한 뒤 지워 주세요.
-> **기준 시점:** 2026-11-08. 근거는 `docs/AI_CONTEXT_D.md`, `docs/scenario-flow.md`, `docs/data-contracts.md`, `spikes/vehicle-probe/README.md`(브랜치 `feature/d-vehicle-probe`), 이전 시험 앱 인계 문서입니다.
+> **기준 시점:** 2026-11-08. 근거는 `docs/scenario-flow.md`, `docs/data-contracts.md`, `spikes/vehicle-probe/README.md`(브랜치 `feature/d-vehicle-probe`), 이전 시험 앱 인계 문서입니다.
 >
 > | 이 문서의 장 | 접수양식 02장 어디에 들어가나 |
 > |---|---|
