@@ -288,7 +288,17 @@ class DemoFlowEngine(
         val run = drive ?: return
         if (!state.demo.playing) return
         run.player.advanceBy(realElapsedMs, ::handle)
+        finishIfReplayEnded(run)
         afterSignals()
+    }
+
+    /**
+     * 재생 파일이 끝났는데 완주 판정이 안 났으면(도착 반경 밖으로 지나간 경우 등) 그 자리에서 결과를 만든다.
+     * 시연 중 주행 화면에서 멈춰 버리지 않게 하기 위한 안전장치.
+     */
+    private fun finishIfReplayEnded(run: DriveRun) {
+        if (!run.player.isFinished || run.finished || run.enteredAtMs == null) return
+        finishCourse(run, run.player.positionMs)
     }
 
     fun setPlaying(playing: Boolean) {
@@ -319,6 +329,7 @@ class DemoFlowEngine(
             state.step == DemoStep.RESULT ||
                 (state.step == DemoStep.DRIVING && run.tracker.progressRatio >= config.nearFinishProgress)
         }
+        finishIfReplayEnded(run)
         afterSignals()
     }
 
@@ -356,6 +367,12 @@ class DemoFlowEngine(
         var lastSpeedMs: Long? = null
         val coursePath = ArrayList<GeoPoint>()
         val drawnPath = ArrayList<GeoPoint>()
+        /** 화면에 넘길 달린 길. 점이 늘었을 때만 새로 만든다(틱마다 복사하지 않게) */
+        var drawnMap: List<MapPoint> = emptyList()
+            get() {
+                if (field.size != drawnPath.size) field = drawnPath.map { it.toMap() }
+                return field
+            }
         var finished = false
 
         fun wallAt(scriptMs: Long): Long = wallAnchorMs + (scriptMs - scriptAnchorMs)
@@ -452,7 +469,7 @@ class DemoFlowEngine(
                 },
                 startedAtEpochMs = run.wallAt(start),
                 endedAtEpochMs = run.wallAt(timeMs),
-                drivenPath = run.drawnPath.map { it.toMap() } + listOfNotNull(run.position?.toMap()),
+                drivenPath = run.drawnMap + listOfNotNull(run.position?.toMap()),
                 courseShape = courseRoad.map { it.toMap() },
                 // 시연: 서버로 보내지 않고 성공 처리, QR은 고정 주소
                 resultUrl = config.resultUrl,
@@ -489,7 +506,7 @@ class DemoFlowEngine(
                         remainingMinutes = guide?.remainingSec?.let(::ceilMinutes),
                         drivenKm = (run.session.liveDistanceM - run.enteredDistanceM) / 1000,
                         elapsedSec = ((scriptMs - entered) / 1000).coerceAtLeast(0),
-                        drivenPath = run.drawnPath.map { it.toMap() },
+                        drivenPath = run.drawnMap,
                         currentPosition = run.position?.toMap(),
                         speedKph = run.speedKph,
                     ),
@@ -500,7 +517,11 @@ class DemoFlowEngine(
         state = next.copy(
             demo = next.demo.copy(
                 scriptSec = (scriptMs - run.scriptAnchorMs) / 1000,
-                courseProgress = if (run.enteredAtMs == null) 0.0 else run.tracker.progressRatio,
+                courseProgress = when {
+                    next.step == DemoStep.RESULT -> 1.0
+                    run.enteredAtMs == null -> 0.0
+                    else -> run.tracker.progressRatio
+                },
                 playing = next.demo.playing && !run.player.isFinished && next.step != DemoStep.RESULT,
             ),
         )

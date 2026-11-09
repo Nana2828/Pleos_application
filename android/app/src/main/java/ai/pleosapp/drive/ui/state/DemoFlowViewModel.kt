@@ -71,7 +71,18 @@ class DemoFlowViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             try {
                 val e = withContext(Dispatchers.Default) { load(app) }
-                e.listener = { _state.value = it }
+                var lastStep = e.state.step
+                var stepAt = SystemClock.elapsedRealtime()
+                e.listener = {
+                    if (it.step != lastStep) {
+                        // 리허설 때 단계별 실제 걸린 시간을 logcat(태그 DemoFlow)으로 본다
+                        val now = SystemClock.elapsedRealtime()
+                        Log.i(TAG, "단계 $lastStep → ${it.step}: ${now - stepAt}ms, 재생 ${it.demo.scriptSec}s, ×${it.demo.speed}")
+                        lastStep = it.step
+                        stepAt = now
+                    }
+                    _state.value = it
+                }
                 engine = e
                 _state.value = e.state
                 ticker()
@@ -80,6 +91,21 @@ class DemoFlowViewModel(app: Application) : AndroidViewModel(app) {
                 _loadError.value = "시연 데이터를 읽지 못했습니다: ${t.message}"
             }
         }
+    }
+
+    private var resumeOnForeground = false
+
+    /** 앱이 화면에서 사라지면 재생을 멈춘다. 발표 중 다른 화면에 갔다 와도 주행이 혼자 진행되지 않게. */
+    fun onAppBackground() {
+        val e = engine ?: return
+        resumeOnForeground = e.state.demo.playing
+        if (resumeOnForeground) e.setPlaying(false)
+    }
+
+    /** 다시 보이면 멈추기 전에 재생 중이었던 경우만 이어 간다. */
+    fun onAppForeground() {
+        if (resumeOnForeground) engine?.setPlaying(true)
+        resumeOnForeground = false
     }
 
     private fun load(app: Application): DemoFlowEngine {
@@ -107,7 +133,8 @@ class DemoFlowViewModel(app: Application) : AndroidViewModel(app) {
         const val TAG = "DemoFlow"
         const val COURSE_FILE = "bucheon-cat-91min.json"
         const val TICK_MS = 50L
-        const val MAX_STEP_MS = 250L
+        /** 느린 에뮬레이터에서 틱이 늦어도 흐른 시간을 버리지 않게 넉넉히. 백그라운드는 onAppBackground가 멈춘다 */
+        const val MAX_STEP_MS = 1_000L
     }
 }
 

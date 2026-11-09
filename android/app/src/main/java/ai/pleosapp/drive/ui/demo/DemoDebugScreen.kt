@@ -13,7 +13,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
+
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -29,6 +29,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -198,11 +199,17 @@ private fun RoutePreview(s: DemoFlowState, modifier: Modifier) {
         DemoStep.DRIVING -> Lines(s.driving.courseShape, emptyList(), s.driving.drivenPath, s.driving.currentPosition, null)
         DemoStep.RESULT -> Lines(s.result.courseShape, emptyList(), s.result.drivenPath, null, null)
     }
-    val all = course + approach + driven + listOfNotNull(current, start)
-    Canvas(modifier.aspectRatio(1f, matchHeightConstraintsFirst = true).background(Color(0xFF1B1F27))) {
-        if (all.isEmpty()) return@Canvas
-        val frame = MapFrame.fit(all)
-        fun o(p: MapPoint) = frame.toUnit(p).let { (x, y) -> Offset(x * size.width, y * size.height) }
+    // 틀은 코스·접근 경로(바뀌지 않는 선)로만 잡아 매 프레임 다시 계산하지 않는다
+    val frame = remember(course, approach, start) {
+        (course + approach + listOfNotNull(start)).takeIf { it.isNotEmpty() }?.let { MapFrame.fit(it) }
+    }
+    Canvas(modifier.background(Color(0xFF1B1F27))) {
+        val f = frame ?: return@Canvas
+        // 0~1 좌표를 가운데 정사각형에 그린다 (가로세로 비율 유지, 잘리지 않게)
+        val side = minOf(size.width, size.height)
+        val left = (size.width - side) / 2
+        val top = (size.height - side) / 2
+        fun o(p: MapPoint) = f.toUnit(p).let { (x, y) -> Offset(left + x * side, top + y * side) }
         line(course.map(::o), Color(0xFF8A93A6), 5f)
         line(approach.map(::o), Color(0xFF3D7BFF), 7f)
         line(driven.map(::o), Color(0xFFE5484D), 7f)

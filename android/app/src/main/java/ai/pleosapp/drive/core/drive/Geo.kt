@@ -50,7 +50,13 @@ fun pointToSegmentM(p: GeoPoint, a: GeoPoint, b: GeoPoint): Double = projectToSe
 fun pointToLineM(p: GeoPoint, line: List<GeoPoint>): Double {
     if (line.isEmpty()) return Double.POSITIVE_INFINITY
     if (line.size == 1) return distanceM(p, line[0])
-    return line.zipWithNext { a, b -> pointToSegmentM(p, a, b) }.min()
+    // 주행 중 위치마다 코스 전체(약 1000구간)를 훑으므로 목록을 새로 만들지 않고 최소값만 구한다.
+    var best = Double.POSITIVE_INFINITY
+    for (i in 0 until line.lastIndex) {
+        val d = pointToSegmentM(p, line[i], line[i + 1])
+        if (d < best) best = d
+    }
+    return best
 }
 
 /** a에서 b로 향하는 방위각(도, 0~359). 북쪽이 0이고 시계 방향으로 커진다. */

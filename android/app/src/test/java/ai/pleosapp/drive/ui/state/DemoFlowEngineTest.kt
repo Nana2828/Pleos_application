@@ -127,6 +127,7 @@ class DemoFlowEngineTest {
         assertEquals(repo.demoCourse.id, decoded.courseId)
         assertEquals(r.distanceKm, decoded.distanceKm, 0.01)
         assertFalse(e.state.demo.playing)
+        assertEquals(1.0, e.state.demo.courseProgress, 0.0)
     }
 
     @Test fun drivingScreenShowsArrivalTimeLikeARealDrive() {
