@@ -9,9 +9,10 @@ object FakeRegionSource {
         RegionSuggestion("수원시", "경기도"),
         RegionSuggestion("수원역", "경기 수원시 팔달구"),
         RegionSuggestion("수원화성", "경기 수원시 장안구"),
-        RegionSuggestion("철원군", "강원특별자치도"),
-        RegionSuggestion("서울시", "서울특별시"),
-        RegionSuggestion("부산시", "부산광역시"),
+        // 최종 제출 범위: 경기도 검색만 (2026-11-09 팀 결정)
+        RegionSuggestion("성남시", "경기도"),
+        RegionSuggestion("용인시", "경기도"),
+        RegionSuggestion("고양시", "경기도"),
     )
 
     const val MAX_RESULTS = 3

@@ -1,8 +1,10 @@
 package ai.pleosapp.drive.ui.region
 
+import ai.pleosapp.drive.ui.common.InfoChip
+import ai.pleosapp.drive.ui.common.MapPlaceholder
+import ai.pleosapp.drive.ui.common.SideRail
 import ai.pleosapp.drive.ui.theme.PleosColors
 import ai.pleosapp.drive.ui.theme.PleosTheme
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -10,7 +12,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -28,9 +29,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -57,7 +56,7 @@ fun RegionScreen(
             Column(
                 modifier = Modifier.padding(start = 32.dp, top = 24.dp).width(560.dp),
             ) {
-                GreetingChip()
+                InfoChip("어디로 가시겠어요?")
                 Spacer(Modifier.height(16.dp))
                 SearchField(state.query, onQueryChange, onClear)
                 if (state.suggestions.isNotEmpty()) {
@@ -74,57 +73,6 @@ fun RegionScreen(
             )
         }
     }
-}
-
-@Composable
-private fun SideRail() {
-    Column(
-        modifier = Modifier.width(88.dp).fillMaxHeight().background(PleosColors.Rail).padding(top = 24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        repeat(4) { index ->
-            Box(
-                modifier = Modifier
-                    .size(56.dp)
-                    .background(
-                        if (index == 0) PleosColors.Accent else PleosColors.PanelItem,
-                        RoundedCornerShape(14.dp),
-                    ),
-            )
-        }
-    }
-}
-
-/** 지도 SDK 가 없어서 자리만 잡은 배경. D 의 지도 표시(PLEOS-39)가 되면 바꿔요. */
-@Composable
-private fun MapPlaceholder() {
-    Canvas(modifier = Modifier.fillMaxSize().background(PleosColors.MapBackground)) {
-        val w = size.width
-        val h = size.height
-        for (i in 1..8) {
-            val y = h * i / 9f
-            drawLine(PleosColors.MapRoad, Offset(0f, y), Offset(w, y), strokeWidth = 6f)
-        }
-        for (i in 1..12) {
-            val x = w * i / 13f
-            drawLine(PleosColors.MapRoad, Offset(x, 0f), Offset(x, h), strokeWidth = 6f)
-        }
-        drawLine(PleosColors.MapRoadMajor, Offset(0f, h * 0.8f), Offset(w, h * 0.3f), strokeWidth = 14f)
-        drawLine(PleosColors.MapRoadMajor, Offset(w * 0.55f, 0f), Offset(w * 0.7f, h), strokeWidth = 14f)
-    }
-}
-
-@Composable
-private fun GreetingChip() {
-    Text(
-        text = "어디로 가시겠어요?",
-        color = PleosColors.Rail,
-        fontSize = 22.sp,
-        modifier = Modifier
-            .background(Color.White, RoundedCornerShape(12.dp))
-            .padding(horizontal = 14.dp, vertical = 8.dp),
-    )
 }
 
 @Composable
