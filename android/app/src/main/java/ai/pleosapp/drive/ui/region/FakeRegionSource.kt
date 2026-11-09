@@ -2,17 +2,18 @@ package ai.pleosapp.drive.ui.region
 
 /**
  * 가짜 지역 검색. core/ 가 생기면 그 인터페이스로 바꿔 끼워요.
- * 시안(docs/ui/page-1.png)의 "수원" 검색 결과와 같게 맞췄어요.
+ *
+ * 지역은 도 단위("경기도")만 지원해요 (2026-11-09 팀 결정).
+ * "경기도"를 검색하면 추천 코스 3개가 바로 나와요.
+ * TEMP: 재원 님의 UiState/FakeUiStates(PLEOS-58)가 오면 그쪽 값으로 바꿔요.
  */
 object FakeRegionSource {
-    private val all = listOf(
-        RegionSuggestion("수원시", "경기도"),
-        RegionSuggestion("수원역", "경기 수원시 팔달구"),
-        RegionSuggestion("수원화성", "경기 수원시 장안구"),
-        // 최종 제출 범위: 경기도 검색만 (2026-11-09 팀 결정)
-        RegionSuggestion("성남시", "경기도"),
-        RegionSuggestion("용인시", "경기도"),
-        RegionSuggestion("고양시", "경기도"),
+    private const val REGION = "경기도"
+
+    private val recommended = listOf(
+        RegionSuggestion("A. 표범 코스", "$REGION · 26km · 약 55분"),
+        RegionSuggestion("B. 하트 코스", "$REGION · 42km · 약 80분"),
+        RegionSuggestion("C. 촛불 코스", "$REGION · 63km · 약 95분"),
     )
 
     const val MAX_RESULTS = 3
@@ -20,6 +21,7 @@ object FakeRegionSource {
     fun search(query: String): List<RegionSuggestion> {
         val q = query.trim()
         if (q.isEmpty()) return emptyList()
-        return all.filter { it.name.contains(q) }.take(MAX_RESULTS)
+        val matchesRegion = REGION.startsWith(q) || q.startsWith(REGION)
+        return if (matchesRegion) recommended.take(MAX_RESULTS) else emptyList()
     }
 }

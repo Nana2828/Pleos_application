@@ -157,12 +157,12 @@ fun RegionScreenWithFakeData(onRegionSelected: (RegionSuggestion) -> Unit = {}) 
     }
 }
 
-@Preview(widthDp = 1280, heightDp = 800, name = "지역 입력 - 수원")
+@Preview(widthDp = 1280, heightDp = 800, name = "지역 입력 - 경기도")
 @Composable
 private fun RegionScreenPreview() {
     PleosTheme {
         RegionScreen(
-            state = RegionUiState("수원", FakeRegionSource.search("수원")),
+            state = RegionUiState("경기도", FakeRegionSource.search("경기도")),
             onQueryChange = {}, onClear = {}, onRegionSelected = {},
         )
     }

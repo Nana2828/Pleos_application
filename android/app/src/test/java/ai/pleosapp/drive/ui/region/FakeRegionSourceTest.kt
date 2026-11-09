@@ -12,18 +12,19 @@ class FakeRegionSourceTest {
     }
 
     @Test
-    fun 수원을_검색하면_시안과_같은_3개가_나온다() {
-        val names = FakeRegionSource.search("수원").map { it.name }
-        assertEquals(listOf("수원시", "수원역", "수원화성"), names)
+    fun 경기도를_검색하면_추천_코스_3개가_나온다() {
+        val names = FakeRegionSource.search("경기도").map { it.name }
+        assertEquals(listOf("A. 표범 코스", "B. 하트 코스", "C. 촛불 코스"), names)
     }
 
     @Test
-    fun 없는_지역은_결과가_없다() {
-        assertTrue(FakeRegionSource.search("없는동네").isEmpty())
+    fun 경기만_입력해도_추천_코스가_나온다() {
+        assertEquals(3, FakeRegionSource.search("경기").size)
     }
 
     @Test
-    fun 결과는_최대_3개() {
-        assertTrue(FakeRegionSource.search("시").size <= FakeRegionSource.MAX_RESULTS)
+    fun 경기도가_아닌_지역은_결과가_없다() {
+        assertTrue(FakeRegionSource.search("서울").isEmpty())
+        assertTrue(FakeRegionSource.search("수원").isEmpty())
     }
 }
