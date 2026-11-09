@@ -1,6 +1,4 @@
-package ai.pleosapp.ui.region
-
-// TODO(PLEOS-42): 패키지 이름 ai.pleosapp 은 임시값이에요. 앱 이름·패키지가 정해지면 바꿔요.
+package ai.pleosapp.drive.ui.region
 
 /** 검색 결과 한 줄. 예: 이름 "수원역", 설명 "경기 수원시 팔달구" */
 data class RegionSuggestion(

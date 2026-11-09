@@ -1,4 +1,4 @@
-package ai.pleosapp.ui.region
+package ai.pleosapp.drive.ui.region
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue

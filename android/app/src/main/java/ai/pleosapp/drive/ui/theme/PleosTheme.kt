@@ -1,4 +1,4 @@
-package ai.pleosapp.ui.theme
+package ai.pleosapp.drive.ui.theme
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme

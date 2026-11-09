@@ -1,4 +1,4 @@
-package ai.pleosapp.ui.region
+package ai.pleosapp.drive.ui.region
 
 /**
  * 가짜 지역 검색. core/ 가 생기면 그 인터페이스로 바꿔 끼워요.

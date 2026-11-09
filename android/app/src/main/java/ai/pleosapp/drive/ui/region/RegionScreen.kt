@@ -1,7 +1,7 @@
-package ai.pleosapp.ui.region
+package ai.pleosapp.drive.ui.region
 
-import ai.pleosapp.ui.theme.PleosColors
-import ai.pleosapp.ui.theme.PleosTheme
+import ai.pleosapp.drive.ui.theme.PleosColors
+import ai.pleosapp.drive.ui.theme.PleosTheme
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
