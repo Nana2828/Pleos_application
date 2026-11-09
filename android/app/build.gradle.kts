@@ -34,6 +34,8 @@ android {
     buildFeatures {
         compose = true
     }
+    // 단위 시험에서 시연 데이터(assets/demo)를 그대로 읽는다
+    sourceSets["test"].resources.srcDir("src/main/assets")
 }
 
 dependencies {
