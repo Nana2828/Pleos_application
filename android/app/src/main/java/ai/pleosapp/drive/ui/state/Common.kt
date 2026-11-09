@@ -26,6 +26,8 @@ data class CourseSummary(
     val estimatedMinutes: Int,
     /** 코스 모양 좌표. 미리보기와 지도 경로선에 쓴다. */
     val shape: List<MapPoint>,
+    /** 고를 수 있으면 true. 시연의 더미(준비 중) 코스는 false → 화면은 흐리게 그리고 눌러도 넘어가지 않는다. */
+    val enabled: Boolean = true,
 )
 
 /** 효율(연비·전비) 단위. 에뮬레이터 차는 전기차라 KM_PER_KWH가 나온다. */
@@ -48,3 +50,47 @@ data class Efficiency(
     val unit: EfficiencyUnit,
     val source: EfficiencySource,
 )
+
+/**
+ * 위경도를 0~1 좌표로 바꾼다. E의 지도 그림(사진 위에 0~1 좌표로 선을 그림)에 바로 넘길 수 있다.
+ * x는 서→동(0→1), y는 북→남(0→1, 화면 아래로 커짐). 가로세로 비율은 위도에 맞춰 보정하고, 남는 쪽은 가운데 맞춘다.
+ *
+ * 예: `val frame = MapFrame.fit(course.shape + approachRoute)` → `frame.toUnit(point)`
+ */
+class MapFrame private constructor(
+    private val maxLat: Double,
+    private val minLng: Double,
+    private val spanDeg: Double,
+    private val lngScale: Double,
+    private val padX: Double,
+    private val padY: Double,
+) {
+    /** 0~1 좌표 (x, y) */
+    fun toUnit(p: MapPoint): Pair<Float, Float> {
+        val x = padX + (p.lng - minLng) * lngScale / spanDeg
+        val y = padY + (maxLat - p.lat) / spanDeg
+        return x.toFloat() to y.toFloat()
+    }
+
+    fun toUnit(points: List<MapPoint>): List<Pair<Float, Float>> = points.map(::toUnit)
+
+    companion object {
+        /** [points]가 모두 들어가게 맞춘다. [padding]은 가장자리 여백 비율. */
+        fun fit(points: List<MapPoint>, padding: Double = 0.06): MapFrame {
+            require(points.isNotEmpty()) { "점이 없습니다" }
+            val minLat = points.minOf { it.lat }
+            val maxLat = points.maxOf { it.lat }
+            val minLng = points.minOf { it.lng }
+            val maxLng = points.maxOf { it.lng }
+            val lngScale = kotlin.math.cos(Math.toRadians((minLat + maxLat) / 2))
+            val w = (maxLng - minLng) * lngScale
+            val h = maxLat - minLat
+            val inner = 1 - 2 * padding
+            val span = maxOf(w, h, 1e-9) / inner
+            // 남는 쪽을 가운데로
+            val padX = padding + (inner - w / span) / 2
+            val padY = padding + (inner - h / span) / 2
+            return MapFrame(maxLat, minLng, span, lngScale, padX, padY)
+        }
+    }
+}

@@ -27,12 +27,18 @@ data class DrivingUiState(
     /** 작은 지도용: 지금까지 달린 길 */
     val drivenPath: List<MapPoint> = emptyList(),
     val currentPosition: MapPoint? = null,
+    /** 현재 속도. 모르면 null */
+    val speedKph: Double? = null,
 )
 
 data class TurnInfo(
     val direction: TurnDirection,
     /** 회전 지점까지 남은 거리(미터) */
     val distanceM: Int,
+    /** 안내 문구. 예: "우회전", "회전교차로 2번째 출구". 비어 있으면 화면이 direction으로 정한다 */
+    val text: String = "",
+    /** 들어갈 도로 이름. 모르면 빈 문자열 */
+    val roadName: String = "",
 )
 
 enum class TurnDirection { STRAIGHT, LEFT, RIGHT, U_TURN }

@@ -14,6 +14,10 @@ data class ApproachUiState(
     val guidance: GuidanceStatus = GuidanceStatus.PREPARING,
     /** "시작점에 도착하면 기록이 시작돼요" 안내를 보여 줄지 */
     val showRecordingHint: Boolean = true,
+    /** 현재 위치 → 시작점 안내 경로 (지도 위 파란 선). 모르면 빈 목록 */
+    val routeToStart: List<MapPoint> = emptyList(),
+    /** 다음 회전 안내. 모르면 null */
+    val nextTurn: TurnInfo? = null,
 )
 
 enum class GuidanceStatus {
