@@ -1,0 +1,43 @@
+# ===== 공통 =====
+.DS_Store
+Thumbs.db
+*.log
+.idea/
+.vscode/
+*.swp
+
+# 비밀 값은 절대 올리지 않기 (.env.example만 올리기)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# ===== Android (android/) =====
+*.iml
+.gradle/
+build/
+captures/
+.externalNativeBuild/
+.cxx/
+local.properties
+*.apk
+*.aab
+*.jks
+*.keystore
+google-services.json
+
+# ===== Python (server/, simulator/, data/) =====
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+*.egg-info/
+*.sqlite3
+*.db
+
+# ===== Web (web/) =====
+node_modules/
+dist/
+.cache/
