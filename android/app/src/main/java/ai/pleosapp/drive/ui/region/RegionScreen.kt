@@ -1,8 +1,8 @@
 package ai.pleosapp.drive.ui.region
 
-import ai.pleosapp.drive.ui.common.CourseShape
 import ai.pleosapp.drive.ui.common.InfoChip
 import ai.pleosapp.drive.ui.common.MapPlaceholder
+import ai.pleosapp.drive.ui.common.MapRouteView
 import ai.pleosapp.drive.ui.common.SideRail
 import ai.pleosapp.drive.ui.theme.PleosColors
 import ai.pleosapp.drive.ui.theme.PleosTheme
@@ -30,6 +30,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -141,9 +144,11 @@ private fun CourseRow(item: CourseItem, selected: Boolean, onSelect: (CourseItem
             .clickable { onSelect(item) }
             .padding(horizontal = 12.dp),
     ) {
-        Box(Modifier.size(84.dp).background(PleosColors.MapBackground, RoundedCornerShape(12.dp))) {
-            CourseShape(item.shape, Modifier.fillMaxSize().padding(8.dp), strokeWidth = 2.dp)
-        }
+        MapRouteView(
+            item.shape,
+            Modifier.size(96.dp).clip(RoundedCornerShape(12.dp)),
+            strokeWidth = 2.dp, lineColor = Color(0xFFE02B2B),
+        )
         Spacer(Modifier.width(20.dp))
         Column(Modifier.weight(1f)) {
             Text("${item.label}. ${item.name}", color = PleosColors.TextPrimary, fontSize = 30.sp, fontWeight = FontWeight.Medium)
@@ -157,20 +162,28 @@ private fun CourseRow(item: CourseItem, selected: Boolean, onSelect: (CourseItem
 private fun CoursePreview(course: CourseItem, modifier: Modifier = Modifier) {
     Box(
         modifier
-            .size(width = 500.dp, height = 520.dp)
-            .background(PleosColors.MapBackground, RoundedCornerShape(24.dp)),
+            .size(width = 700.dp, height = 640.dp)
+            .shadow(16.dp, RoundedCornerShape(28.dp))
+            .clip(RoundedCornerShape(28.dp))
+            .border(4.dp, Color.White, RoundedCornerShape(28.dp)),
     ) {
-        CourseShape(course.shape, Modifier.fillMaxSize().padding(40.dp), strokeWidth = 8.dp)
-        Text(
-            text = "${course.label} ${course.name} 미리보기",
-            color = PleosColors.TextPrimary,
-            fontSize = 24.sp,
+        MapRouteView(course.shape, Modifier.fillMaxSize(), strokeWidth = 9.dp, showStart = true, focus = true)
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(16.dp)
-                .background(PleosColors.Rail, RoundedCornerShape(16.dp))
-                .padding(horizontal = 20.dp, vertical = 12.dp),
-        )
+                .padding(20.dp)
+                .background(PleosColors.Rail, RoundedCornerShape(18.dp))
+                .padding(horizontal = 24.dp, vertical = 14.dp),
+        ) {
+            Text("♥", color = PleosColors.Pink, fontSize = 26.sp)
+            Spacer(Modifier.width(8.dp))
+            Text(
+                text = "${course.label} ${course.name} 미리보기 · 지도 위 ${course.name.removeSuffix(" 코스")} 모양",
+                color = PleosColors.TextPrimary,
+                fontSize = 26.sp,
+            )
+        }
     }
 }
 
@@ -178,8 +191,8 @@ private fun CoursePreview(course: CourseItem, modifier: Modifier = Modifier) {
 
 /** 상태를 이 함수 안에서 들고 있는 임시 버전. ViewModel(D)이 연결되면 쓰지 않아요. */
 @Composable
-fun RegionScreenWithFakeData(onCourseSelected: (CourseItem) -> Unit = {}) {
-    var query by remember { mutableStateOf("") }
+fun RegionScreenWithFakeData(initialQuery: String = "", onCourseSelected: (CourseItem) -> Unit = {}) {
+    var query by remember { mutableStateOf(initialQuery) }
     var selectedId by remember { mutableStateOf<String?>(null) }
     PleosTheme {
         RegionScreen(
