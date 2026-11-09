@@ -13,8 +13,17 @@ class FakeRegionSourceTest {
 
     @Test
     fun 경기도를_검색하면_추천_코스_3개가_나온다() {
-        val names = FakeRegionSource.search("경기도").map { it.name }
+        val names = FakeRegionSource.search("경기도").map { "${it.label}. ${it.name}" }
         assertEquals(listOf("A. 표범 코스", "B. 하트 코스", "C. 촛불 코스"), names)
+    }
+
+    @Test
+    fun 코스마다_거리와_시간과_모양이_있다() {
+        FakeRegionSource.search("경기도").forEach {
+            assertTrue(it.distanceKm > 0)
+            assertTrue(it.minutes > 0)
+            assertTrue(it.shape.size >= 2)
+        }
     }
 
     @Test

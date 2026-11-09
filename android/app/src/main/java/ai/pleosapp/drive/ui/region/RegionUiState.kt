@@ -1,13 +1,25 @@
 package ai.pleosapp.drive.ui.region
 
-/** 검색 결과 한 줄. 예: 이름 "수원역", 설명 "경기 수원시 팔달구" */
-data class RegionSuggestion(
-    val name: String,
-    val detail: String,
+import androidx.compose.ui.geometry.Offset
+
+// TEMP: 재원 님의 UiState(PLEOS-58)가 올라오면 이 모델은 지우고 그쪽을 써요.
+
+/** 추천 코스 한 개. 예: "B", "하트 코스", 42km, 약 80분 */
+data class CourseItem(
+    val id: String,
+    val label: String,       // "A"
+    val name: String,        // "표범 코스"
+    val distanceKm: Int,
+    val minutes: Int,
+    val shape: List<Offset>, // 0~1 로 줄인 모양 (좌상단이 0,0)
 )
 
-/** 지역 입력 화면이 그리는 값 전부. 화면은 이것만 보고 그려요. */
+/**
+ * 지역 입력 + 코스 선택 화면이 그리는 값 전부. (시안 1번과 2번을 한 화면으로 합쳤어요)
+ * 화면은 이것만 보고 그려요.
+ */
 data class RegionUiState(
     val query: String = "",
-    val suggestions: List<RegionSuggestion> = emptyList(),
+    val courses: List<CourseItem> = emptyList(),
+    val selectedId: String? = null,
 )
