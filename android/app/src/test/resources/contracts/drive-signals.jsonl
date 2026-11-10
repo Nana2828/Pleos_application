@@ -1,0 +1,13 @@
+{"format": "drive-replay", "version": 2, "name": "예시 고리 (합성)", "synthetic": true, "course_id": "sample-loop", "energy_type": "ev"}
+{"t": 0, "k": "pos", "lat": 37.412700, "lon": 127.094700, "acc": 5.0}
+{"t": 0, "k": "odo", "v": 12345.6}
+{"t": 0, "k": "battery", "v": 70000.0}
+{"t": 3000, "k": "gear", "v": "D"}
+{"t": 4000, "k": "speed", "v": 12.0}
+{"t": 4000, "k": "pos", "lat": 37.412730, "lon": 127.094760, "acc": 5.0}
+{"t": 5000, "k": "speed", "v": 20.5}
+{"t": 5000, "k": "pos", "lat": 37.412780, "lon": 127.094860, "acc": 5.0}
+{"t": 6000, "k": "speed", "v": 0.0}
+{"t": 8000, "k": "gear", "v": "P"}
+{"t": 8000, "k": "odo", "v": 12345.6}
+{"t": 8000, "k": "battery", "v": 69990.0}
