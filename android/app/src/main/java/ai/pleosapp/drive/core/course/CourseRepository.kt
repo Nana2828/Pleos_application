@@ -27,7 +27,7 @@ interface CourseRepository {
 /**
  * 1차 제출 시연용 고정 목록.
  * - 지역: "경기도"(팀 결정: 도 단위) 또는 "부천"을 입력하면 같은 후보가 나온다.
- * - 코스: A 고양이(진짜 파일, 긴 코스만 선택 가능) + B·C 더미(목록에만 있고 고를 수 없음).
+ * - 코스: A 고양이(진짜 파일, 긴 코스만 선택 가능) + B·C 더미(고를 수는 있지만 시연 주행은 A 로만 가능).
  * - 길이: 고양이 짧은 코스는 더미(고를 수 없음).
  *
  * @param catCourseJson assets/demo/bucheon-cat-91min.json 내용
@@ -39,7 +39,7 @@ class DemoCourseRepository(catCourseJson: String) : CourseRepository {
     private val center = GeoPoint(37.4785, 126.76)
 
     private val heart = dummy(
-        id = "demo-heart", label = "B", name = "하트 코스", km = 26.0, min = 55,
+        id = "demo-heart", label = "B", name = "하트 코스", km = 26.0, min = 55, enabled = true,
         shape = closedShape(72) { t ->
             val a = t + PI
             val x = 16 * sin(a).pow(3)
@@ -49,7 +49,7 @@ class DemoCourseRepository(catCourseJson: String) : CourseRepository {
     )
 
     private val star = dummy(
-        id = "demo-star", label = "C", name = "별 코스", km = 63.0, min = 105,
+        id = "demo-star", label = "C", name = "별 코스", km = 63.0, min = 105, enabled = true,
         shape = (0..10).map { i ->
             val r = if (i % 2 == 0) 1.0 else 0.45
             val a = PI / 2 + i * PI / 5
@@ -92,11 +92,11 @@ class DemoCourseRepository(catCourseJson: String) : CourseRepository {
         else -> emptyList()
     }
 
-    private fun dummy(id: String, label: String, name: String, km: Double, min: Int, shape: List<GeoPoint>) =
+    private fun dummy(id: String, label: String, name: String, km: Double, min: Int, shape: List<GeoPoint>, enabled: Boolean = false) =
         PresetCourse(
             id = id, label = label, name = name, shapeKind = id.removePrefix("demo-"), area = "부천 근처 (준비 중)",
             place = "부천시", distanceKm = km, durationMin = min, start = shape.first(), waypoints = emptyList(),
-            preview = shape, enabled = false,
+            preview = shape, enabled = enabled,
         )
 
     private fun closedShape(points: Int, offset: (Double) -> Pair<Double, Double>): List<GeoPoint> {
