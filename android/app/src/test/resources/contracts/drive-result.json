@@ -1,0 +1,27 @@
+{
+  "schema": "drive-result/1",
+  "course_id": "sample-loop",
+  "started_at": "2026-11-08T14:03:00+09:00",
+  "ended_at": "2026-11-08T14:13:30+09:00",
+  "duration_sec": 630,
+  "moving_sec": 560,
+  "distance_km": 3.3,
+  "energy_type": "fuel",
+  "avg_fuel_economy": 13.5,
+  "fuel_economy_source": "sample",
+  "max_kph": 48,
+  "on_course_ratio": 0.91,
+  "polyline": {
+    "type": "LineString",
+    "coordinates": [
+      [127.094700, 37.412700],
+      [127.101200, 37.415900],
+      [127.106800, 37.411300],
+      [127.100100, 37.406900],
+      [127.094700, 37.412700]
+    ]
+  },
+  "record_source": "replay",
+  "synthetic": true,
+  "app_version": "0.1.0"
+}

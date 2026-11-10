@@ -34,11 +34,16 @@ android {
     buildFeatures {
         compose = true
     }
+    // 단위 시험에서 시연 데이터(assets/demo)를 그대로 읽는다
+    sourceSets["test"].resources.srcDir("src/main/assets")
 }
 
 dependencies {
     // Pleos Vehicle SDK. 2026-11-08 문서 project-setup 기준 최신 2.3.2 (시험 앱에서 동작 확인)
     implementation("ai.pleos.playground:Vehicle:2.3.2")
+
+    // 주행 계산 코어(core/drive)의 규격 JSON 읽기·쓰기
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
 
     // Jetpack Compose + MVVM
     val composeBom = platform("androidx.compose:compose-bom:2024.12.01")
