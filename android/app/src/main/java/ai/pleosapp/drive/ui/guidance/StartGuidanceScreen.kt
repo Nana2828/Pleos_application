@@ -1,5 +1,7 @@
 package ai.pleosapp.drive.ui.guidance
 
+import androidx.compose.ui.geometry.isSpecified
+import androidx.compose.ui.geometry.isUnspecified
 import ai.pleosapp.drive.ui.common.MapPlaceholder
 import ai.pleosapp.drive.ui.common.BackButton
 import ai.pleosapp.drive.ui.common.PleosButton
@@ -46,16 +48,20 @@ fun StartGuidanceScreen(
     onConfirm: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    @androidx.annotation.DrawableRes mapRes: Int = ai.pleosapp.drive.R.drawable.map_suwon,
 ) {
     Row(modifier.fillMaxSize().background(PleosColors.Rail)) {
         SideRail()
         Box(Modifier.weight(1f).fillMaxHeight()) {
-            MapPlaceholder { t ->
+            MapPlaceholder(photo = mapRes) { t ->
                 // 코스 선(파랑) + 시작점(분홍) + 현재 위치(파랑)와 그 사이 초록 점선
                 val path = androidx.compose.ui.graphics.Path()
-                route.forEachIndexed { i, p ->
+                var penUp = true
+                route.forEach { p ->
+                    if (p.isUnspecified) { penUp = true; return@forEach }
                     val o = t.toScreen(p)
-                    if (i == 0) path.moveTo(o.x, o.y) else path.lineTo(o.x, o.y)
+                    if (penUp) path.moveTo(o.x, o.y) else path.lineTo(o.x, o.y)
+                    penUp = false
                 }
                 drawPath(
                     path, PleosColors.Accent,
@@ -116,6 +122,6 @@ fun StartGuidanceScreen(
 @Composable
 private fun StartGuidanceScreenPreview() {
     PleosTheme {
-        StartGuidanceScreen("B 하트 코스", "3.2km", "약 8분", SampleRoute.heart, SampleRoute.start, SampleRoute.currentPosition, {}, {})
+        StartGuidanceScreen("B 하트 코스", "3.2km", "약 8분", SampleRoute.heart, SampleRoute.startOf(SampleRoute.heart), SampleRoute.currentNear(SampleRoute.startOf(SampleRoute.heart)), {}, {})
     }
 }

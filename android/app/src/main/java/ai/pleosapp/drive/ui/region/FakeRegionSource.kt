@@ -11,11 +11,11 @@ import ai.pleosapp.drive.ui.common.SampleRoute
 object FakeRegionSource {
     private const val REGION = "경기도"
 
-    // TEMP: A·C 코스 지도 사진이 아직 없어서 모양은 모두 B(하트) 경로를 써요.
+    // TEMP: 코스마다 지도 사진과 그 위의 경로를 가져요(SampleRoute).
     private val recommended = listOf(
-        CourseItem("leopard", "A", "표범 코스", 26, 55, SampleRoute.heart),
-        CourseItem("heart", "B", "하트 코스", 42, 80, SampleRoute.heart),
-        CourseItem("candle", "C", "촛불 코스", 63, 95, SampleRoute.heart),
+        CourseItem("leopard", "A", "표범 코스", 26, 55, SampleRoute.leopard, SampleRoute.LEOPARD_MAP),
+        CourseItem("heart", "B", "하트 코스", 42, 80, SampleRoute.heart, SampleRoute.HEART_MAP),
+        CourseItem("candle", "C", "촛불 코스", 63, 95, SampleRoute.candle, SampleRoute.CANDLE_MAP),
     )
 
     const val MAX_RESULTS = 3

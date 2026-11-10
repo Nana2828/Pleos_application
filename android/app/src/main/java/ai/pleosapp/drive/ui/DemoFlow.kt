@@ -43,10 +43,10 @@ fun DemoFlow(initialQuery: String = "") {
             course != null && option != null && guiding && finished -> {
                 BackHandler { finished = false }
                 ResultScreen(
-                    title = "주행 완료 · 수원 ${course.name}",
-                    distance = "42.3km", duration = "1:24:10", efficiency = "12.8km/L", place = "수원시",
+                    title = "주행 완료 · ${course.name}",
+                    distance = "42.3km", duration = "1:24:10", efficiency = "12.8km/L", place = when (course.id) { "leopard" -> "용인시 기흥구"; "candle" -> "용인시 처인구"; else -> "수원시" },
                     period = "2026.11.05  10:12 ~ 11:36",
-                    route = SampleRoute.heart, qrCaption = "QR을 찍어 친구와 비교해요",
+                    route = course.shape, mapRes = course.mapRes, qrCaption = "QR을 찍어 친구와 비교해요",
                     onBack = { finished = false },
                 )
             }
@@ -56,9 +56,10 @@ fun DemoFlow(initialQuery: String = "") {
                     courseTitle = "${course.label} ${course.name}",
                     distanceToStart = "3.2km",
                     etaToStart = "약 8분",
-                    route = SampleRoute.heart,
-                    start = SampleRoute.start,
-                    currentPosition = SampleRoute.currentPosition,
+                    route = course.shape,
+                    start = SampleRoute.startOf(course.shape),
+                    currentPosition = SampleRoute.currentNear(SampleRoute.startOf(course.shape)),
+                    mapRes = course.mapRes,
                     onConfirm = { finished = true }, // TODO: 주행 기록 화면이 생기면 거기로
                     onBack = { guiding = false },
                 )
@@ -71,6 +72,7 @@ fun DemoFlow(initialQuery: String = "") {
                     notice = "먼저 코스 시작점까지 안내해 드릴게요",
                     onCancel = { confirming = null },
                     onConfirm = { guiding = true },
+                    mapRes = course.mapRes,
                 )
             }
             course != null -> {
@@ -83,6 +85,7 @@ fun DemoFlow(initialQuery: String = "") {
                     onOptionSelected = { lengthId = it },
                     onConfirm = { confirming = options.firstOrNull { it.id == lengthId } ?: options.last() },
                     onBack = { chosen = null },
+                    mapRes = course.mapRes,
                 )
             }
             else -> RegionScreen(
@@ -97,6 +100,6 @@ fun DemoFlow(initialQuery: String = "") {
 
 /** TEMP: 짧은 코스는 긴 코스의 약 62% 로 가정한 임시 값 (시안: 42km·80분 → 26km·50분) */
 private fun lengthOptionsFor(c: CourseItem) = listOf(
-    LengthOption("short", "짧은 코스", "가볍게 한 바퀴", (c.distanceKm * 0.62).toInt(), (c.minutes * 0.62).toInt(), false, SampleRoute.scaled(0.6f)),
-    LengthOption("long", "긴 코스", "${c.name.removeSuffix(" 코스")}를 크게 그려요", c.distanceKm, c.minutes, true, c.shape),
+    LengthOption("short", "짧은 코스", "가볍게 한 바퀴", (c.distanceKm * 0.62).toInt(), (c.minutes * 0.62).toInt(), false, SampleRoute.scaled(c.shape, 0.6f), c.mapRes),
+    LengthOption("long", "긴 코스", "${c.name.removeSuffix(" 코스")}를 크게 그려요", c.distanceKm, c.minutes, true, c.shape, c.mapRes),
 )

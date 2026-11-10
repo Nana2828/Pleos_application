@@ -41,11 +41,12 @@ fun ConfirmScreen(
     onCancel: () -> Unit,
     onConfirm: () -> Unit,
     modifier: Modifier = Modifier,
+    @androidx.annotation.DrawableRes mapRes: Int = ai.pleosapp.drive.R.drawable.map_suwon,
 ) {
     Box(modifier.fillMaxSize().background(PleosColors.Rail)) {
         Row(Modifier.fillMaxSize()) {
             SideRail(dimmed = true)
-            MapPlaceholder()
+            MapPlaceholder(photo = mapRes)
         }
         Scrim {
             Column(

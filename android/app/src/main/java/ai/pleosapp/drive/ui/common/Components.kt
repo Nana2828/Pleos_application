@@ -1,5 +1,7 @@
 package ai.pleosapp.drive.ui.common
 
+import androidx.compose.ui.geometry.isSpecified
+import androidx.compose.ui.geometry.isUnspecified
 import ai.pleosapp.drive.ui.theme.PleosColors
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -72,10 +74,11 @@ fun SideRail(modifier: Modifier = Modifier, dimmed: Boolean = false) {
 fun MapPlaceholder(
     modifier: Modifier = Modifier.fillMaxSize(),
     focus: List<Offset>? = null,
+    @androidx.annotation.DrawableRes photo: Int = ai.pleosapp.drive.R.drawable.map_suwon,
     focusPadding: Float = 0.05f,
     overlay: (androidx.compose.ui.graphics.drawscope.DrawScope.(MapPhotoTransform) -> Unit)? = null,
 ) {
-    val image = androidx.compose.ui.graphics.ImageBitmap.imageResource(ai.pleosapp.drive.R.drawable.map_suwon)
+    val image = androidx.compose.ui.graphics.ImageBitmap.imageResource(photo)
     Canvas(modifier = modifier.clipToBounds().background(PleosColors.MapBackground)) {
         val iw = image.width.toFloat()
         val ih = image.height.toFloat()
@@ -83,9 +86,10 @@ fun MapPlaceholder(
         var scale = cover
         var cx = iw / 2f
         var cy = ih / 2f
-        if (focus != null && focus.size > 1) {
-            val minX = focus.minOf { it.x }; val maxX = focus.maxOf { it.x }
-            val minY = focus.minOf { it.y }; val maxY = focus.maxOf { it.y }
+        val fp = focus?.filter { it.isSpecified }
+        if (fp != null && fp.size > 1) {
+            val minX = fp.minOf { it.x }; val maxX = fp.maxOf { it.x }
+            val minY = fp.minOf { it.y }; val maxY = fp.maxOf { it.y }
             val bw = ((maxX - minX) * iw).coerceAtLeast(1f)
             val bh = ((maxY - minY) * ih).coerceAtLeast(1f)
             // 코스 전체가 보이도록 맞춰요. 영역이 사진보다 크면 남는 곳은 사진 가장자리로 이어 채워요.
@@ -145,19 +149,23 @@ fun MapRouteView(
     innerColor: Color? = null,
     showStart: Boolean = false,
     focus: Boolean = false,
+    @androidx.annotation.DrawableRes photo: Int = ai.pleosapp.drive.R.drawable.map_suwon,
 ) {
-    MapPlaceholder(modifier, focus = if (focus) route else null) { t ->
+    MapPlaceholder(modifier, focus = if (focus) route else null, photo = photo) { t ->
         if (route.size > 1) {
             val path = Path()
-            route.forEachIndexed { i, p ->
+            var penUp = true
+            route.forEach { p ->
+                if (p.isUnspecified) { penUp = true; return@forEach }
                 val o = t.toScreen(p)
-                if (i == 0) path.moveTo(o.x, o.y) else path.lineTo(o.x, o.y)
+                if (penUp) path.moveTo(o.x, o.y) else path.lineTo(o.x, o.y)
+                penUp = false
             }
             fun stroke(w: Float) = Stroke(width = w, cap = StrokeCap.Round, join = StrokeJoin.Round)
             drawPath(path, lineColor, style = stroke(strokeWidth.toPx()))
             if (innerColor != null) drawPath(path, innerColor, style = stroke(strokeWidth.toPx() * 0.4f))
             if (showStart) {
-                val s = t.toScreen(route.first())
+                val s = t.toScreen(route.first { it.isSpecified })
                 drawCircle(Color.White, strokeWidth.toPx() * 1.6f, s)
                 drawCircle(PleosColors.Pink, strokeWidth.toPx() * 1.1f, s)
             }

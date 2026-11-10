@@ -54,6 +54,7 @@ fun ResultScreen(
     qrCaption: String,   // "QR을 찍어 친구와 비교해요"
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    @androidx.annotation.DrawableRes mapRes: Int = ai.pleosapp.drive.R.drawable.map_suwon,
 ) {
     Row(modifier.fillMaxSize().background(PleosColors.Rail)) {
         SideRail()
@@ -61,7 +62,7 @@ fun ResultScreen(
             MapRouteView(
                 route, Modifier.fillMaxSize(),
                 strokeWidth = 12.dp, lineColor = PleosColors.Accent, innerColor = Color(0xFFE02B2B),
-                focus = true,
+                focus = true, photo = mapRes,
             )
             BackButton(onBack, Modifier.align(Alignment.TopStart).padding(24.dp))
         }

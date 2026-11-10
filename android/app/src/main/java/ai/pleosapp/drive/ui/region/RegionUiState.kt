@@ -11,7 +11,8 @@ data class CourseItem(
     val name: String,        // "표범 코스"
     val distanceKm: Int,
     val minutes: Int,
-    val shape: List<Offset>, // 0~1 로 줄인 모양 (좌상단이 0,0)
+    val shape: List<Offset>, // 지도 사진 위 경로 (0~1, 좌상단이 0,0)
+    @androidx.annotation.DrawableRes val mapRes: Int, // 이 코스의 지도 사진
 )
 
 /**

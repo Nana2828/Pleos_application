@@ -44,6 +44,7 @@ data class LengthOption(
     val minutes: Int,
     val recommended: Boolean,
     val shape: List<Offset>,
+    @androidx.annotation.DrawableRes val mapRes: Int,
 )
 
 /**
@@ -59,11 +60,12 @@ fun CourseLengthScreen(
     onConfirm: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    @androidx.annotation.DrawableRes mapRes: Int = ai.pleosapp.drive.R.drawable.map_suwon,
 ) {
     Box(modifier.fillMaxSize().background(PleosColors.Rail)) {
         Row(Modifier.fillMaxSize()) {
             SideRail(dimmed = true)
-            MapPlaceholder()
+            MapPlaceholder(photo = mapRes)
         }
         Scrim {
             Column(
@@ -103,7 +105,7 @@ private fun OptionCard(option: LengthOption, selected: Boolean, onSelect: (Strin
         MapRouteView(
             option.shape,
             Modifier.fillMaxWidth().height(260.dp).clip(RoundedCornerShape(14.dp)),
-            strokeWidth = 4.dp, showStart = true,
+            strokeWidth = 4.dp, showStart = true, photo = option.mapRes,
         )
         Spacer(Modifier.height(12.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -127,8 +129,8 @@ private fun OptionCard(option: LengthOption, selected: Boolean, onSelect: (Strin
 
 /** TEMP: 시안과 같은 값의 임시 데이터 */
 internal val tempLengthOptions = listOf(
-    LengthOption("short", "짧은 코스", "가볍게 한 바퀴", 26, 50, false, SampleRoute.scaled(0.6f)),
-    LengthOption("long", "긴 코스", "하트를 크게 그려요", 42, 80, true, SampleRoute.heart),
+    LengthOption("short", "짧은 코스", "가볍게 한 바퀴", 26, 50, false, SampleRoute.scaled(SampleRoute.heart, 0.6f), SampleRoute.HEART_MAP),
+    LengthOption("long", "긴 코스", "하트를 크게 그려요", 42, 80, true, SampleRoute.heart, SampleRoute.HEART_MAP),
 )
 
 @Preview(widthDp = 1280, heightDp = 800, name = "코스 길이 선택")

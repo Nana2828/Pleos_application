@@ -147,7 +147,7 @@ private fun CourseRow(item: CourseItem, selected: Boolean, onSelect: (CourseItem
         MapRouteView(
             item.shape,
             Modifier.size(96.dp).clip(RoundedCornerShape(12.dp)),
-            strokeWidth = 2.dp, lineColor = Color(0xFFE02B2B),
+            strokeWidth = 2.dp, lineColor = Color(0xFFE02B2B), photo = item.mapRes,
         )
         Spacer(Modifier.width(20.dp))
         Column(Modifier.weight(1f)) {
@@ -167,7 +167,7 @@ private fun CoursePreview(course: CourseItem, modifier: Modifier = Modifier) {
             .clip(RoundedCornerShape(28.dp))
             .border(4.dp, Color.White, RoundedCornerShape(28.dp)),
     ) {
-        MapRouteView(course.shape, Modifier.fillMaxSize(), strokeWidth = 9.dp, showStart = true, focus = true)
+        MapRouteView(course.shape, Modifier.fillMaxSize(), strokeWidth = 9.dp, showStart = true, focus = true, photo = course.mapRes)
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
