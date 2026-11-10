@@ -11,8 +11,8 @@ import org.junit.Test
 
 class GuidanceTrackerTest {
 
-    private val route = DemoRouteCodec.decode(DemoAssets.text("demo-route.json"))
-    private val positions: List<GeoPoint> = ContractCodec.decodeReplay(DemoAssets.text("demo-drive.jsonl"))
+    private val route = DemoRouteCodec.decode(DemoAssets.text("bucheon-cat-91min.route.json"))
+    private val positions: List<GeoPoint> = ContractCodec.decodeReplay(DemoAssets.text("bucheon-cat-91min.drive.jsonl"))
         .signals.filterIsInstance<DriveSignal.Position>().map { it.point }
 
     private data class Run(

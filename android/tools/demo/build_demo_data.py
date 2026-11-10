@@ -2,15 +2,17 @@
 
 1차 제출 목업 시연용이다. 앱은 이 파일들을 assets에서 읽어 재생한다(인터넷 필요 없음).
 
-만드는 파일 (기본 출력: android/app/src/main/assets/demo/):
-  <코스 id>.json        코스 원본 복사본 (B가 만든 형식 그대로. 좌표는 {lat, lng})
-  demo-route.json       접근 구간(가짜 현재 위치 → 코스 시작점)과 코스 구간의
-                        촘촘한 경로 좌표와 회전 안내. 좌표 배열은 [경도, 위도] (GeoJSON)
-  demo-drive.jsonl      주행 신호 drive-replay v2. 접근 + 코스 한 바퀴를 실제 시간(1초 간격)으로 담는다.
-                        앱이 배속으로 재생한다. "synthetic": true
+만드는 파일 (기본 출력: android/app/src/main/assets/demo/). 코스마다 세 개씩 생긴다:
+  <코스 id>.json          코스 원본 복사본 (B가 만든 형식 그대로. 좌표는 {lat, lng})
+  <코스 id>.route.json    접근 구간(가짜 현재 위치 → 코스 시작점)과 코스 구간의
+                          촘촘한 경로 좌표와 회전 안내. 좌표 배열은 [경도, 위도] (GeoJSON)
+  <코스 id>.drive.jsonl   주행 신호 drive-replay v2. 접근 + 코스 한 바퀴를 실제 시간(1초 간격)으로 담는다.
+                          앱이 배속으로 재생한다. "synthetic": true
+
+가짜 현재 위치는 모든 코스가 같다: LG가산디지털센터 (서울 금천구 가산디지털1로 189). PLEOS-62
 
 usage:
-  python -I build_demo_data.py <코스 JSON> [--out <폴더>] [--origin 위도,경도] [--seed 1]
+  python -I build_demo_data.py <코스 JSON> [<코스 JSON> ...] [--out <폴더>] [--origin 위도,경도] [--seed 1]
 
 OSRM 공개 서버(router.project-osrm.org)는 시연 준비용으로 한 번만 부른다. 앱은 실행 중에 부르지 않는다.
 경로 데이터 출처: © OpenStreetMap contributors (ODbL).
@@ -28,8 +30,8 @@ from pathlib import Path
 OSRM = "https://router.project-osrm.org"
 EARTH_R = 6_371_000.0
 
-# 가짜 현재 위치: 시작점 P0에서 북쪽 약 1.8km, 도로로 3.2km (UI 시안의 "3.2km" 느낌)
-DEFAULT_ORIGIN = (37.4520, 126.7580)
+# 가짜 현재 위치: LG가산디지털센터 (서울 금천구 가산디지털1로 189). OSM Nominatim 좌표. PLEOS-62
+DEFAULT_ORIGIN = (37.482336, 126.879651)
 
 # 가짜 차량 값 (시연 영상은 전기차)
 START_ODO_KM = 12_480.0
@@ -303,19 +305,22 @@ def drive(section_list, out_path, header, rnd):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("course")
+    ap.add_argument("courses", nargs="+", help="코스 JSON 파일 (여러 개 가능)")
     ap.add_argument("--out", default=str(Path(__file__).resolve().parents[2] / "app/src/main/assets/demo"))
     ap.add_argument("--origin", help="가짜 현재 위치 '위도,경도'")
     ap.add_argument("--seed", type=int, default=1)
     args = ap.parse_args()
 
-    course_path = Path(args.course)
-    course = json.loads(course_path.read_text(encoding="utf-8"))
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
-    rnd = random.Random(args.seed)
-
     origin = tuple(map(float, args.origin.split(","))) if args.origin else DEFAULT_ORIGIN
+    for course_file in args.courses:
+        build_course(Path(course_file), out, origin, random.Random(args.seed))
+
+
+def build_course(course_path, out, origin, rnd):
+    course = json.loads(course_path.read_text(encoding="utf-8"))
+    cid = course["id"]
     start = (course["start"]["lng"], course["start"]["lat"])
 
     # 코스: 시작점 → 각 구간의 경유지 → 구간 도착점 (B가 코스를 만들 때 쓴 순서 그대로)
@@ -332,20 +337,22 @@ def main():
         "format": "demo-route",
         "version": 1,
         "synthetic": True,
-        "courseId": course["id"],
+        "courseId": cid,
         "source": {"router": "OSRM", "url": OSRM, "fetchedAt": fetched,
                    "attribution": "© OpenStreetMap contributors (ODbL)"},
         "origin": {"lat": origin[0], "lon": origin[1], "name": "현재 위치(시연)"},
         "approach": approach,
         "course": course_sec,
     }
-    (out / "demo-route.json").write_text(json.dumps(route_doc, ensure_ascii=False, indent=1), encoding="utf-8")
-    shutil.copyfile(course_path, out / f"{course['id']}.json")
+    (out / f"{cid}.route.json").write_text(json.dumps(route_doc, ensure_ascii=False, indent=1), encoding="utf-8")
+    if course_path.resolve() != (out / f"{cid}.json").resolve():
+        shutil.copyfile(course_path, out / f"{cid}.json")
 
     header = {"format": "drive-replay", "version": 2, "name": f"{course['name']} 시연 (합성)",
-              "synthetic": True, "course_id": course["id"], "energy_type": "ev"}
-    stat = drive([approach, course_sec], out / "demo-drive.jsonl", header, rnd)
+              "synthetic": True, "course_id": cid, "energy_type": "ev"}
+    stat = drive([approach, course_sec], out / f"{cid}.drive.jsonl", header, rnd)
 
+    print(f"[{cid}]")
     print(f"접근 구간: {approach['distanceM'] / 1000:.2f}km, OSRM {approach['durationSec'] / 60:.0f}분, 안내 {len(approach['steps'])}개")
     print(f"코스 구간: {course_sec['distanceM'] / 1000:.2f}km (파일 값 {course['distanceKm']}km), "
           f"OSRM {course_sec['durationSec'] / 60:.0f}분 (파일 값 {course['durationMin']}분), 안내 {len(course_sec['steps'])}개")

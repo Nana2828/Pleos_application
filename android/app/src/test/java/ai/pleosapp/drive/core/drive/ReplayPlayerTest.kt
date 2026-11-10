@@ -69,7 +69,7 @@ class ReplayPlayerTest {
     }
 
     @Test fun demoAssetReplaysIntoOneFinishedDrive() {
-        val text = TestGeo.resource("demo/demo-drive.jsonl")
+        val text = TestGeo.resource("demo/bucheon-cat-91min.drive.jsonl")
         val replay = ContractCodec.decodeReplay(text)
         assertTrue(replay.synthetic)
         val player = ReplayPlayer(replay.signals)
@@ -79,8 +79,9 @@ class ReplayPlayerTest {
         while (!player.isFinished) player.advanceBy(100) { s -> session.handle(s)?.let(events::add) }
         assertTrue(events.first() is SessionEvent.Started)
         val record = (events.last() as SessionEvent.Finished).record
-        assertEquals(53.7, record.distanceM / 1000, 0.5)
-        // 약 98분 주행을 90배로 재생하면 약 65초
-        assertEquals(65.0, player.durationMs / 90.0 / 1000, 3.0)
+        // 가산 → 시작점 15.5km + 코스 50.5km (PLEOS-62)
+        assertEquals(66.0, record.distanceM / 1000, 0.5)
+        // 약 112분 주행을 90배로 재생하면 약 75초
+        assertEquals(74.5, player.durationMs / 90.0 / 1000, 3.0)
     }
 }
