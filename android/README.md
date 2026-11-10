@@ -39,13 +39,30 @@ app/src/main/java/ai/pleosapp/drive/
 │   ├── vehicle/
 │   ├── network/
 │   └── model/   # shared/ JSON과 같은 모양의 data class
-└── ui/          # E 나연: 화면과 ViewModel
-    ├── region/      # PLEOS-42 지역 입력
-    ├── courses/     # PLEOS-43 코스 목록·미리보기
-    ├── confirm/     # PLEOS-44 안내 확인
-    ├── driving/     # PLEOS-45 주행 중
-    ├── result/      # PLEOS-46 결과 + QR
-    └── theme/
+└── ui/
+    ├── state/       # D 재원: 화면별 UiState·Actions·ViewModel, 가짜 데이터(FakeUiStates) (PLEOS-58)
+    ├── region/      # E 나연: PLEOS-42 지역 입력
+    ├── courses/     # E 나연: PLEOS-43 코스 목록·미리보기
+    ├── confirm/     # E 나연: PLEOS-44 안내 확인 (+ 시작점까지 안내)
+    ├── driving/     # E 나연: PLEOS-45 주행 중
+    ├── result/      # E 나연: PLEOS-46 결과 + QR
+    └── theme/       # E 나연
 ```
 
-`ui/`는 `core/`의 인터페이스만 써요. `core/`가 아직 없으면 가짜 데이터로 화면부터 만들어요.
+### D·E 경계 (가안: D가 ViewModel·상태 담당)
+
+- 화면은 `XxxUiState`를 받아 그대로 그리고, 버튼을 누르면 `XxxActions`의 함수를 불러요.
+  - 예: `CoursesScreen(state: CoursesUiState, actions: CoursesActions)`
+- 화면을 먼저 만들 때는 `FakeUiStates.courses`, `CoursesActions.Noop`을 넣어요. 값은 UI 시안(`docs/ui/page-1~6`)과 같아요.
+- 화면 사이 이동(내비게이션)은 화면 쪽(E)에서 해요. 예: `onRegionSelected`를 부른 뒤 코스 선택 화면으로 이동.
+- 상태에는 값과 단위만 있어요. 문구("연비"/"효율"), 숫자 형식, 색은 화면 쪽에서 정해요.
+- 값이 더 필요하면 D에게 말해 주세요. `ui/state/`는 D가 고쳐요.
+
+| 화면 | 상태 | 동작 | 가짜 데이터 |
+|---|---|---|---|
+| 1 지역 입력 | `RegionUiState` | `RegionActions` | `FakeUiStates.region` |
+| 2 코스 선택 | `CoursesUiState` | `CoursesActions` | `FakeUiStates.courses` |
+| 3 선택 확인 | `ConfirmUiState` | `ConfirmActions` | `FakeUiStates.confirm` |
+| 4 시작점까지 안내 | `ApproachUiState` | `ApproachActions` | `FakeUiStates.approach` |
+| 5 주행 기록 중 | `DrivingUiState` | `DrivingActions` | `FakeUiStates.driving` |
+| 6 도착 결과 | `ResultUiState` | `ResultActions` | `FakeUiStates.result`, `resultUploadFailed` |
