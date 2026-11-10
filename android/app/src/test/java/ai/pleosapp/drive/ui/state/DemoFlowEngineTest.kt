@@ -33,12 +33,12 @@ class DemoFlowEngineTest {
         onStartGuidance()
     }
 
-    @Test fun regionSearchShowsCatAndDisabledDummies() {
+    @Test fun regionSearchShowsThreeSelectableCourses() {
         val e = engine()
         e.onQueryChange("부천")
         val courses = e.state.courses.courses
         assertEquals(listOf("A", "B", "C"), courses.map { it.label })
-        assertEquals(listOf(true, false, false), courses.map { it.enabled })
+        assertEquals(listOf(true, true, true), courses.map { it.enabled })
         assertEquals("고양이 코스", courses[0].name)
         e.onQueryChange("서울")
         assertTrue(e.state.courses.courses.isEmpty())
@@ -48,8 +48,9 @@ class DemoFlowEngineTest {
         val e = engine()
         e.onQueryChange("경기도")
         e.onCourseChosen("demo-heart")
+        assertEquals(DemoStep.LENGTH, e.state.step)
+        e.onLengthBack()
         assertEquals(DemoStep.REGION, e.state.step)
-        assertNotNull(e.state.courses.errorMessage)
 
         e.onCourseChosen(repo.demoCourse.id)
         assertEquals(DemoStep.LENGTH, e.state.step)
