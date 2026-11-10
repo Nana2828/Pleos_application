@@ -1,9 +1,8 @@
 package ai.pleosapp.drive.ui.common
 
-import androidx.compose.ui.geometry.isSpecified
-import androidx.compose.ui.geometry.isUnspecified
 import ai.pleosapp.drive.R
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.isSpecified
 
 /**
  * TEMP: 지도 사진 위에 있는 코스 선들. 사진 크기를 1로 본 좌표예요(좌상단 0,0).
@@ -15,9 +14,6 @@ object SampleRoute {
 
     private fun join(vararg strokes: List<Offset>): List<Offset> =
         strokes.flatMapIndexed { i, l -> if (i == 0) l else listOf(Offset.Unspecified) + l }
-
-    /** 사진 안의 경로(펜을 뗀 곳 제외)만 */
-    fun List<Offset>.drawable(): List<Offset> = filter { it.isSpecified }
 
     /** 코스 시작점 = 선의 첫 점 */
     fun startOf(route: List<Offset>): Offset = route.first { it.isSpecified }

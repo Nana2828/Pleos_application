@@ -4,12 +4,12 @@ import ai.pleosapp.drive.ui.common.SampleRoute
 import ai.pleosapp.drive.ui.confirm.ConfirmScreen
 import ai.pleosapp.drive.ui.guidance.StartGuidanceScreen
 import ai.pleosapp.drive.ui.length.CourseLengthScreen
-import ai.pleosapp.drive.ui.result.ResultScreen
 import ai.pleosapp.drive.ui.length.LengthOption
 import ai.pleosapp.drive.ui.region.CourseItem
 import ai.pleosapp.drive.ui.region.FakeRegionSource
 import ai.pleosapp.drive.ui.region.RegionScreen
 import ai.pleosapp.drive.ui.region.RegionUiState
+import ai.pleosapp.drive.ui.result.ResultScreen
 import ai.pleosapp.drive.ui.theme.PleosTheme
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
@@ -80,6 +80,7 @@ fun DemoFlow(initialQuery: String = "") {
                 val options = lengthOptionsFor(course)
                 CourseLengthScreen(
                     courseTitle = "${course.label} ${course.name}",
+                    subtitle = "같은 ${course.name.removeSuffix(" 코스")} 모양을 작게, 또는 크게 그려요",
                     options = options,
                     selectedId = lengthId,
                     onOptionSelected = { lengthId = it },
@@ -101,5 +102,5 @@ fun DemoFlow(initialQuery: String = "") {
 /** TEMP: 짧은 코스는 긴 코스의 약 62% 로 가정한 임시 값 (시안: 42km·80분 → 26km·50분) */
 private fun lengthOptionsFor(c: CourseItem) = listOf(
     LengthOption("short", "짧은 코스", "가볍게 한 바퀴", (c.distanceKm * 0.62).toInt(), (c.minutes * 0.62).toInt(), false, SampleRoute.scaled(c.shape, 0.6f), c.mapRes),
-    LengthOption("long", "긴 코스", "${c.name.removeSuffix(" 코스")}를 크게 그려요", c.distanceKm, c.minutes, true, c.shape, c.mapRes),
+    LengthOption("long", "긴 코스", "${c.name.removeSuffix(" 코스")} 모양을 크게 그려요", c.distanceKm, c.minutes, true, c.shape, c.mapRes),
 )

@@ -1,14 +1,14 @@
 package ai.pleosapp.drive.ui.guidance
 
-import androidx.compose.ui.geometry.isSpecified
-import androidx.compose.ui.geometry.isUnspecified
-import ai.pleosapp.drive.ui.common.MapPlaceholder
+import ai.pleosapp.drive.R
 import ai.pleosapp.drive.ui.common.BackButton
+import ai.pleosapp.drive.ui.common.MapPlaceholder
 import ai.pleosapp.drive.ui.common.PleosButton
 import ai.pleosapp.drive.ui.common.SampleRoute
 import ai.pleosapp.drive.ui.common.SideRail
 import ai.pleosapp.drive.ui.theme.PleosColors
 import ai.pleosapp.drive.ui.theme.PleosTheme
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,7 +26,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.isUnspecified
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -48,14 +54,14 @@ fun StartGuidanceScreen(
     onConfirm: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
-    @androidx.annotation.DrawableRes mapRes: Int = ai.pleosapp.drive.R.drawable.map_suwon,
+    @DrawableRes mapRes: Int = R.drawable.map_suwon,
 ) {
     Row(modifier.fillMaxSize().background(PleosColors.Rail)) {
         SideRail()
         Box(Modifier.weight(1f).fillMaxHeight()) {
             MapPlaceholder(photo = mapRes) { t ->
                 // 코스 선(파랑) + 시작점(분홍) + 현재 위치(파랑)와 그 사이 초록 점선
-                val path = androidx.compose.ui.graphics.Path()
+                val path = Path()
                 var penUp = true
                 route.forEach { p ->
                     if (p.isUnspecified) { penUp = true; return@forEach }
@@ -65,18 +71,18 @@ fun StartGuidanceScreen(
                 }
                 drawPath(
                     path, PleosColors.Accent,
-                    style = androidx.compose.ui.graphics.drawscope.Stroke(
+                    style = Stroke(
                         width = 16.dp.toPx(),
-                        cap = androidx.compose.ui.graphics.StrokeCap.Round,
-                        join = androidx.compose.ui.graphics.StrokeJoin.Round,
+                        cap = StrokeCap.Round,
+                        join = StrokeJoin.Round,
                     ),
                 )
                 val s0 = t.toScreen(start)
                 val me = t.toScreen(currentPosition)
                 drawLine(
                     Color(0xFF22C55E), me, s0, strokeWidth = 7.dp.toPx(),
-                    pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(1f, 16.dp.toPx()), 0f),
-                    cap = androidx.compose.ui.graphics.StrokeCap.Round,
+                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(1f, 16.dp.toPx()), 0f),
+                    cap = StrokeCap.Round,
                 )
                 drawCircle(Color.White, 20.dp.toPx(), s0)
                 drawCircle(PleosColors.Pink, 14.dp.toPx(), s0)

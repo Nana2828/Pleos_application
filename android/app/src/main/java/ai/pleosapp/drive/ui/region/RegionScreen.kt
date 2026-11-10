@@ -73,6 +73,18 @@ fun RegionScreen(
             if (selected != null) {
                 CoursePreview(selected, Modifier.align(Alignment.CenterEnd).padding(end = 24.dp, top = 80.dp))
             }
+            if (state.courses.isEmpty()) {
+                Text(
+                    text = "\"경기도\" 라고 말해보세요",
+                    color = PleosColors.TextPrimary,
+                    fontSize = 26.sp,
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(32.dp)
+                        .background(PleosColors.Rail, RoundedCornerShape(20.dp))
+                        .padding(horizontal = 28.dp, vertical = 18.dp),
+                )
+            }
             // TODO(PLEOS-42): 시각·날씨는 가짜 값이에요. 실제 값은 정해지면 연결해요.
             Text(
                 text = "오전 10:00  18°C",
@@ -106,13 +118,16 @@ private fun SearchField(query: String, onQueryChange: (String) -> Unit, onClear:
         colors = TextFieldDefaults.colors(
             focusedContainerColor = PleosColors.Panel,
             unfocusedContainerColor = PleosColors.Panel,
-            focusedIndicatorColor = PleosColors.Accent,
-            unfocusedIndicatorColor = PleosColors.Panel,
+            focusedIndicatorColor = Color.Transparent,
+            unfocusedIndicatorColor = Color.Transparent,
             cursorColor = PleosColors.Accent,
             focusedTextColor = PleosColors.TextPrimary,
             unfocusedTextColor = PleosColors.TextPrimary,
         ),
-        modifier = Modifier.fillMaxWidth().height(80.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(80.dp)
+            .border(2.dp, PleosColors.Accent, RoundedCornerShape(36.dp)),
     )
 }
 

@@ -1,5 +1,6 @@
 package ai.pleosapp.drive.ui.confirm
 
+import ai.pleosapp.drive.R
 import ai.pleosapp.drive.ui.common.MapPlaceholder
 import ai.pleosapp.drive.ui.common.PleosButton
 import ai.pleosapp.drive.ui.common.PleosButtonStyle
@@ -7,6 +8,7 @@ import ai.pleosapp.drive.ui.common.Scrim
 import ai.pleosapp.drive.ui.common.SideRail
 import ai.pleosapp.drive.ui.theme.PleosColors
 import ai.pleosapp.drive.ui.theme.PleosTheme
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -41,7 +43,7 @@ fun ConfirmScreen(
     onCancel: () -> Unit,
     onConfirm: () -> Unit,
     modifier: Modifier = Modifier,
-    @androidx.annotation.DrawableRes mapRes: Int = ai.pleosapp.drive.R.drawable.map_suwon,
+    @DrawableRes mapRes: Int = R.drawable.map_suwon,
 ) {
     Box(modifier.fillMaxSize().background(PleosColors.Rail)) {
         Row(Modifier.fillMaxSize()) {

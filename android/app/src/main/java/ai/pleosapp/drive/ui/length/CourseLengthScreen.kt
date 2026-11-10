@@ -1,5 +1,6 @@
 package ai.pleosapp.drive.ui.length
 
+import ai.pleosapp.drive.R
 import ai.pleosapp.drive.ui.common.BackButton
 import ai.pleosapp.drive.ui.common.MapPlaceholder
 import ai.pleosapp.drive.ui.common.MapRouteView
@@ -10,9 +11,11 @@ import ai.pleosapp.drive.ui.common.SideRail
 import ai.pleosapp.drive.ui.common.StatTile
 import ai.pleosapp.drive.ui.theme.PleosColors
 import ai.pleosapp.drive.ui.theme.PleosTheme
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -30,7 +33,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -44,7 +46,7 @@ data class LengthOption(
     val minutes: Int,
     val recommended: Boolean,
     val shape: List<Offset>,
-    @androidx.annotation.DrawableRes val mapRes: Int,
+    @DrawableRes val mapRes: Int,
 )
 
 /**
@@ -54,13 +56,14 @@ data class LengthOption(
 @Composable
 fun CourseLengthScreen(
     courseTitle: String, // "B 하트 코스"
+    subtitle: String,    // "같은 하트 모양을 작게, 또는 크게 그려요"
     options: List<LengthOption>,
     selectedId: String?,
     onOptionSelected: (String) -> Unit,
     onConfirm: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
-    @androidx.annotation.DrawableRes mapRes: Int = ai.pleosapp.drive.R.drawable.map_suwon,
+    @DrawableRes mapRes: Int = R.drawable.map_suwon,
 ) {
     Box(modifier.fillMaxSize().background(PleosColors.Rail)) {
         Row(Modifier.fillMaxSize()) {
@@ -78,9 +81,9 @@ fun CourseLengthScreen(
                 BackButton(onBack, Modifier.align(Alignment.Start))
                 Spacer(Modifier.height(8.dp))
                 Text("$courseTitle · 길이를 선택하세요", color = PleosColors.TextPrimary, fontSize = 36.sp, fontWeight = FontWeight.Bold)
-                Text("같은 하트 모양을 작게, 또는 크게 그려요", color = PleosColors.TextSecondary, fontSize = 22.sp)
+                Text(subtitle, color = PleosColors.TextSecondary, fontSize = 22.sp)
                 Spacer(Modifier.height(24.dp))
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(24.dp)) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(24.dp)) {
                     options.forEach { o ->
                         OptionCard(o, o.id == selectedId, onOptionSelected, Modifier.weight(1f))
                     }
@@ -120,7 +123,7 @@ private fun OptionCard(option: LengthOption, selected: Boolean, onSelect: (Strin
         }
         Text(option.description, color = PleosColors.TextSecondary, fontSize = 22.sp)
         Spacer(Modifier.height(12.dp))
-        Row(horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             StatTile("${option.distanceKm}km", "거리", Modifier.weight(1f).background(PleosColors.Rail, RoundedCornerShape(14.dp)), 32)
             StatTile("약 ${option.minutes}분", "예상 시간", Modifier.weight(1f).background(PleosColors.Rail, RoundedCornerShape(14.dp)), 32)
         }
@@ -137,6 +140,6 @@ internal val tempLengthOptions = listOf(
 @Composable
 private fun CourseLengthScreenPreview() {
     PleosTheme {
-        CourseLengthScreen("B 하트 코스", tempLengthOptions, "long", {}, {}, {})
+        CourseLengthScreen("B 하트 코스", "같은 하트 모양을 작게, 또는 크게 그려요", tempLengthOptions, "long", {}, {}, {})
     }
 }

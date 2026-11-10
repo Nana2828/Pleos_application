@@ -1,8 +1,8 @@
 package ai.pleosapp.drive.ui.common
 
-import androidx.compose.ui.geometry.isSpecified
-import androidx.compose.ui.geometry.isUnspecified
+import ai.pleosapp.drive.R
 import ai.pleosapp.drive.ui.theme.PleosColors
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -24,20 +24,22 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.isSpecified
+import androidx.compose.ui.geometry.isUnspecified
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.FilterQuality
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
-import androidx.compose.ui.res.imageResource
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.drawText
-import androidx.compose.ui.text.rememberTextMeasurer
-import kotlin.random.Random
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -74,11 +76,11 @@ fun SideRail(modifier: Modifier = Modifier, dimmed: Boolean = false) {
 fun MapPlaceholder(
     modifier: Modifier = Modifier.fillMaxSize(),
     focus: List<Offset>? = null,
-    @androidx.annotation.DrawableRes photo: Int = ai.pleosapp.drive.R.drawable.map_suwon,
+    @DrawableRes photo: Int = R.drawable.map_suwon,
     focusPadding: Float = 0.05f,
-    overlay: (androidx.compose.ui.graphics.drawscope.DrawScope.(MapPhotoTransform) -> Unit)? = null,
+    overlay: (DrawScope.(MapPhotoTransform) -> Unit)? = null,
 ) {
-    val image = androidx.compose.ui.graphics.ImageBitmap.imageResource(photo)
+    val image = ImageBitmap.imageResource(photo)
     Canvas(modifier = modifier.clipToBounds().background(PleosColors.MapBackground)) {
         val iw = image.width.toFloat()
         val ih = image.height.toFloat()
@@ -108,9 +110,9 @@ fun MapPlaceholder(
         fun strip(srcX: Int, srcY: Int, srcW: Int, srcH: Int, x: Float, y: Float, w: Float, h: Float) {
             if (w <= 0f || h <= 0f) return
             drawImage(
-                image, androidx.compose.ui.unit.IntOffset(srcX, srcY), androidx.compose.ui.unit.IntSize(srcW, srcH),
-                androidx.compose.ui.unit.IntOffset(x.toInt(), y.toInt()),
-                androidx.compose.ui.unit.IntSize(w.toInt() + 1, h.toInt() + 1),
+                image, IntOffset(srcX, srcY), IntSize(srcW, srcH),
+                IntOffset(x.toInt(), y.toInt()),
+                IntSize(w.toInt() + 1, h.toInt() + 1),
             )
         }
         // 사진 밖 빈틈: 가장자리 한 줄을 늘려서 채움
@@ -120,11 +122,11 @@ fun MapPlaceholder(
         if (left + dw < size.width) strip(iwI - 1, 0, 1, ihI, left + dw, top, size.width - left - dw, dh)
         drawImage(
             image = image,
-            srcOffset = androidx.compose.ui.unit.IntOffset.Zero,
-            srcSize = androidx.compose.ui.unit.IntSize(iwI, ihI),
-            dstOffset = androidx.compose.ui.unit.IntOffset(left.toInt(), top.toInt()),
-            dstSize = androidx.compose.ui.unit.IntSize(dw.toInt() + 1, dh.toInt() + 1),
-            filterQuality = androidx.compose.ui.graphics.FilterQuality.Medium,
+            srcOffset = IntOffset.Zero,
+            srcSize = IntSize(iwI, ihI),
+            dstOffset = IntOffset(left.toInt(), top.toInt()),
+            dstSize = IntSize(dw.toInt() + 1, dh.toInt() + 1),
+            filterQuality = FilterQuality.Medium,
         )
         overlay?.invoke(this, MapPhotoTransform(left, top, dw, dh))
     }
@@ -149,7 +151,7 @@ fun MapRouteView(
     innerColor: Color? = null,
     showStart: Boolean = false,
     focus: Boolean = false,
-    @androidx.annotation.DrawableRes photo: Int = ai.pleosapp.drive.R.drawable.map_suwon,
+    @DrawableRes photo: Int = R.drawable.map_suwon,
 ) {
     MapPlaceholder(modifier, focus = if (focus) route else null, photo = photo) { t ->
         if (route.size > 1) {
@@ -226,33 +228,6 @@ fun StatTile(value: String, label: String, modifier: Modifier = Modifier, valueS
     Column(modifier = modifier.padding(8.dp)) {
         Text(value, color = PleosColors.TextPrimary, fontSize = valueSize.sp, fontWeight = FontWeight.Bold)
         Text(label, color = PleosColors.TextSecondary, fontSize = 20.sp)
-    }
-}
-
-/**
- * 코스 모양 선. 점은 0~1 사이로 줄여 넣어요(좌상단이 0,0).
- * 실제 코스 좌표(위도·경도)를 0~1 로 바꾸는 일은 ViewModel(D) 쪽에서 할지 정해야 해요.
- */
-@Composable
-fun CourseShape(
-    points: List<Offset>,
-    modifier: Modifier = Modifier,
-    color: Color = PleosColors.Accent,
-    strokeWidth: Dp = 6.dp,
-) {
-    Canvas(modifier = modifier) {
-        if (points.size < 2) return@Canvas
-        val path = Path()
-        points.forEachIndexed { i, p ->
-            val x = p.x * size.width
-            val y = p.y * size.height
-            if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
-        }
-        drawPath(
-            path = path,
-            color = color,
-            style = Stroke(width = strokeWidth.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round),
-        )
     }
 }
 

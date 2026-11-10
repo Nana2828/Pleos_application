@@ -1,5 +1,6 @@
 package ai.pleosapp.drive.ui.region
 
+import androidx.annotation.DrawableRes
 import androidx.compose.ui.geometry.Offset
 
 // TEMP: 재원 님의 UiState(PLEOS-58)가 올라오면 이 모델은 지우고 그쪽을 써요.
@@ -12,7 +13,7 @@ data class CourseItem(
     val distanceKm: Int,
     val minutes: Int,
     val shape: List<Offset>, // 지도 사진 위 경로 (0~1, 좌상단이 0,0)
-    @androidx.annotation.DrawableRes val mapRes: Int, // 이 코스의 지도 사진
+    @DrawableRes val mapRes: Int, // 이 코스의 지도 사진
 )
 
 /**

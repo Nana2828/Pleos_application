@@ -1,5 +1,6 @@
 package ai.pleosapp.drive.ui.result
 
+import ai.pleosapp.drive.R
 import ai.pleosapp.drive.ui.common.BackButton
 import ai.pleosapp.drive.ui.common.MapRouteView
 import ai.pleosapp.drive.ui.common.SampleRoute
@@ -7,6 +8,7 @@ import ai.pleosapp.drive.ui.common.SideRail
 import ai.pleosapp.drive.ui.common.StatTile
 import ai.pleosapp.drive.ui.theme.PleosColors
 import ai.pleosapp.drive.ui.theme.PleosTheme
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -54,7 +56,7 @@ fun ResultScreen(
     qrCaption: String,   // "QR을 찍어 친구와 비교해요"
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
-    @androidx.annotation.DrawableRes mapRes: Int = ai.pleosapp.drive.R.drawable.map_suwon,
+    @DrawableRes mapRes: Int = R.drawable.map_suwon,
 ) {
     Row(modifier.fillMaxSize().background(PleosColors.Rail)) {
         SideRail()
