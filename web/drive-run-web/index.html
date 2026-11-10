@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0B0B0B" />
+  <title>DRIVE RUN | 나의 드라이브 기록</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="header">
+      <div class="brand"><b>DRIVE<span>RUN</span></b><small lang="en">DRIVE YOUR OWN LINE.</small></div>
+      <span class="demo-badge" aria-label="샘플 데이터">DEMO / 01</span>
+    </header>
+    <main class="content">
+      <section id="result-view" class="view active" aria-labelledby="result-title" aria-busy="true">
+        <div id="trip-message" class="trip-message" role="status" aria-live="polite">
+          <h2 id="trip-message-title">주행 기록 조회 중</h2>
+          <p id="trip-message-detail">주행 ID를 확인하고 있습니다.</p>
+          <a id="trip-sample-link" href="?tripId=abc123" hidden>기본 샘플 기록 보기</a>
+        </div>
+        <div class="heading-row"><div><h1 id="result-title" lang="en">DRIVE RECORD</h1><p class="subline" id="drive-date">2026.11.05 · 수원시</p></div></div>
+        <article class="metric metric-hero" aria-labelledby="distance-label">
+          <span id="distance-label" class="metric-label"><span id="distance-kind">주행 거리</span> <span lang="en">DISTANCE</span></span>
+          <div class="hero-reading"><strong id="distance">42.3</strong><small>KM</small></div>
+        </article>
+        <div class="map-card">
+          <div class="map-top"><div><span class="overline" lang="en">ROUTE</span><strong id="course-name">수원 하트 코스</strong></div><span class="course-chip">데모 경로</span></div>
+          <div class="route-wrap">
+            <div id="route-map" class="route-map" role="region" aria-label="수원 주행 경로 지도" aria-describedby="route-notice map-status"></div>
+            <div class="map-feedback">
+              <p id="map-status" role="status" aria-live="polite">지도를 불러오는 중입니다.</p>
+              <button id="retry-map" type="button" hidden>지도 다시 불러오기</button>
+            </div>
+            <div class="map-caption">
+              <span id="route-notice">데모 경로 · 요약 수치는 별도 샘플</span>
+              <span class="map-attribution">지도: <a href="https://openfreemap.org/" target="_blank" rel="noopener noreferrer">OpenFreeMap</a> · <a href="https://openmaptiles.org/" target="_blank" rel="noopener noreferrer">© OpenMapTiles</a> · <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap 기여자</a></span>
+            </div>
+          </div>
+        </div>
+        <div class="metric-grid" role="group" aria-label="주행 보조 지표">
+          <article class="metric"><span id="duration-label" class="metric-label">주행 시간</span><div><strong id="duration">1:24:10</strong></div></article>
+          <article class="metric"><span class="metric-label">평균 연비</span><div><strong id="fuel">12.8</strong><small>KM/L</small></div></article>
+          <article class="metric"><span class="metric-label">주행 지역</span><div><strong class="place" id="region">수원시</strong></div></article>
+        </div>
+      </section>
+      <section id="ranking-view" class="view" aria-labelledby="ranking-title" hidden>
+        <div class="heading-row"><div><h1 id="ranking-title" lang="en">LEADERBOARD</h1><p class="subline" id="ranking-month">2026년 11월 · 고정 데모 랭킹</p></div></div>
+        <section class="my-rank" aria-labelledby="overall-rank-title" aria-describedby="overall-rank-note">
+          <h2 id="overall-rank-title"><span class="overline" lang="en">OVERALL / TOP 3</span><span>나의 종합 순위 <strong id="my-rank">3위</strong></span></h2>
+          <ol id="overall-podium" class="mini-podium" role="list" aria-label="종합 상위 3명, 왼쪽부터 2위·1위·3위"></ol>
+          <p id="overall-rank-note">데모 순위 · 종합 순위 산정 기준 미확정</p>
+        </section>
+        <div id="ranking-tabs" class="ranking-tabs" role="tablist" aria-label="랭킹 부문"></div>
+        <section id="friend-ranking-panel" class="ranking-dashboard" role="tabpanel" aria-label="부문별 친구 순위">
+          <div class="category-summary">
+            <div><h2 id="category-title">평균 연비</h2><p id="category-self" aria-live="polite"></p></div>
+            <button id="find-my-rank" type="button">내 순위 보기</button>
+          </div>
+          <div id="ranking-scroll" class="ranking-scroll" role="region" aria-label="친구 순위 목록" tabindex="0">
+            <ol id="ranking-list" class="ranking-list" aria-label="선택한 부문의 전체 친구 순위"></ol>
+            <p id="ranking-empty" class="empty-message" hidden>표시할 친구 순위가 없습니다.</p>
+          </div>
+          <p class="ranking-footnote">고정 데모 · 로그인·친구 관계 연동 없음</p>
+        </section>
+      </section>
+    </main>
+    <nav class="bottom-nav" aria-label="페이지 이동"><button class="nav-item selected" data-page="result"><span class="nav-index" aria-hidden="true">01</span>내 기록</button><button class="nav-item" data-page="ranking"><span class="nav-index" aria-hidden="true">02</span>친구 랭킹</button></nav>
+  </div>
+  <script src="data.js"></script>
+  <script src="course-data.js"></script>
+  <script src="map.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

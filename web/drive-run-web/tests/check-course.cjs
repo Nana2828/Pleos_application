@@ -1,0 +1,26 @@
+﻿'use strict';
+const assert=require('node:assert/strict');
+const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
+const root=path.resolve(__dirname,'..');
+const raw=JSON.parse(fs.readFileSync(path.join(root,'data/courses/bucheon-cat-91min.json'),'utf8').replace(/^\uFEFF/,''));
+const original=JSON.stringify(raw);
+const context={window:{},document:{currentScript:{src:'http://localhost:5173/course-data.js'}},URL,fetch:process.argv.includes('--http')?fetch:async()=>({ok:true,json:async()=>raw})};
+vm.runInNewContext(fs.readFileSync(path.join(root,'course-data.js'),'utf8'),context);
+const courses=context.window.DRIVE_RUN_COURSES;
+(async()=>{
+ assert.equal(raw.id,'bucheon-cat-91min');assert.equal(raw.points.length,18);assert.equal(raw.routePreview.length,353);
+ const trip=await courses.getById(raw.id);
+ if(process.argv.includes('--http'))console.log('PASS: loaded original JSON through the running local HTTP server');
+ assert.equal(trip.tripId,raw.id);assert.equal(trip.courseName,raw.name);assert.equal(trip.region,'부천·인천');
+ assert.equal(trip.routeType,'planned');assert.equal(trip.isDemo,true);assert.equal(trip.plannedDistanceKm,49.7);assert.equal(trip.estimatedDurationMin,91);
+ for(const key of ['distanceKm','durationSec','avgFuelEconomy','startedAt','endedAt','userId'])assert.equal(Object.hasOwn(trip,key),false,'Invented field: '+key);
+ assert.equal(trip.path.length,353);assert.equal(trip.waypoints.length,18);
+ trip.path.forEach((p,i)=>assert.equal(JSON.stringify(p),JSON.stringify([raw.routePreview[i][1],raw.routePreview[i][0]])));
+ trip.waypoints.forEach((p,i)=>{assert.equal(p.order,i+1);assert.equal(p.name,raw.points[i].name);assert.equal(JSON.stringify(p.coordinates),JSON.stringify([raw.points[i].lng,raw.points[i].lat]))});
+ assert.equal(JSON.stringify(raw),original,'Original JSON mutated');
+ assert.equal(courses.hasId('constructor'),false);await assert.rejects(()=>courses.getById('missing'));
+ for(const broken of [{...raw,routePreview:[[126.7,37.4],[126.8,37.5]]},{...raw,routePreview:new Array(2)},{...raw,points:[null]},{...raw,distanceKm:null},{...raw,durationMin:-1}])assert.throws(()=>courses.normalize(broken));
+ context.fetch=async()=>({ok:false});await assert.rejects(()=>courses.getById(raw.id));
+ context.fetch=async()=>({ok:true,json:async()=>({...raw,id:'wrong'})});await assert.rejects(()=>courses.getById(raw.id));
+ console.log('PASS: original course, 18 waypoints, all 353 coordinate reversals, planned values, absent actual measurements, validation and load failures');
+})().catch(error=>{console.error(error);process.exitCode=1});
