@@ -45,6 +45,9 @@ dependencies {
     // 주행 계산 코어(core/drive)의 규격 JSON 읽기·쓰기
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
 
+    // 결과 화면의 QR 코드 그리기 (PLEOS-46)
+    implementation("com.google.zxing:core:3.5.3")
+
     // Jetpack Compose + MVVM
     val composeBom = platform("androidx.compose:compose-bom:2024.12.01")
     implementation(composeBom)

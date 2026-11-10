@@ -3,8 +3,15 @@ package ai.pleosapp.drive.ui.region
 import ai.pleosapp.drive.ui.common.InfoChip
 import ai.pleosapp.drive.ui.common.MapPlaceholder
 import ai.pleosapp.drive.ui.common.MapRouteView
+import ai.pleosapp.drive.ui.common.rememberMapScene
 import ai.pleosapp.drive.ui.common.SideRail
 import ai.pleosapp.drive.ui.theme.PleosColors
+import ai.pleosapp.drive.ui.state.CourseSummary
+import ai.pleosapp.drive.ui.state.CoursesActions
+import ai.pleosapp.drive.ui.state.CoursesUiState
+import ai.pleosapp.drive.ui.state.FakeUiStates
+import ai.pleosapp.drive.ui.state.RegionActions
+import ai.pleosapp.drive.ui.state.RegionUiState
 import ai.pleosapp.drive.ui.theme.PleosTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -24,12 +31,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
@@ -38,42 +42,48 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlin.math.roundToInt
 
 /**
  * 지역 입력 + 코스 선택 화면 (PLEOS-42·43, 시안 1번과 2번을 합침).
  *
- * "경기도"를 입력하면 아래에 추천 코스 3개가 바로 나오고,
- * 코스를 고르면 오른쪽에 모양 미리보기가 떠요.
+ * "경기도"를 입력하면 아래에 추천 코스가 바로 나오고, 코스를 누르면 길이 선택으로 넘어가요.
+ * 미리보기를 보던 코스가 있으면(되돌아왔을 때) 오른쪽에 모양이 떠요.
  *
- * 값은 [state] 로만 받고, 사용자 동작은 콜백으로만 알려요. (ViewModel 에 의존하지 않아요)
+ * 값은 D 의 [RegionUiState]·[CoursesUiState] 로만 받고, 사용자 동작은 [RegionActions]·[CoursesActions] 로만 알려요.
+ * 준비 중인 코스([CourseSummary.enabled] = false)는 흐리게 보이고, 누르면 안내 문구가 나와요.
  * 주행 전 정차 상태에서만 쓰는 화면이라 터치 입력을 써요.
  */
 @Composable
 fun RegionScreen(
-    state: RegionUiState,
-    onQueryChange: (String) -> Unit,
-    onClear: () -> Unit,
-    onCourseSelected: (CourseItem) -> Unit,
+    region: RegionUiState,
+    courses: CoursesUiState,
+    regionActions: RegionActions,
+    coursesActions: CoursesActions,
     modifier: Modifier = Modifier,
 ) {
-    val selected = state.courses.firstOrNull { it.id == state.selectedId }
+    val selected = courses.selectedCourse
     Row(modifier = modifier.fillMaxSize().background(PleosColors.Rail)) {
         SideRail()
         Box(modifier = Modifier.weight(1f).fillMaxSize()) {
             MapPlaceholder()
             Column(modifier = Modifier.padding(start = 32.dp, top = 24.dp).width(560.dp)) {
-                InfoChip(if (state.courses.isEmpty()) "어디로 가시겠어요?" else "${state.query.trim()} 드라이브 코스")
+                InfoChip(if (courses.courses.isEmpty()) "어디로 가시겠어요?" else "${region.query.trim()} 드라이브 코스")
                 Spacer(Modifier.height(16.dp))
-                SearchField(state.query, onQueryChange, onClear)
-                if (state.courses.isNotEmpty()) {
+                SearchField(region.query, regionActions::onQueryChange, regionActions::onClearQuery)
+                if (courses.courses.isNotEmpty()) {
                     Spacer(Modifier.height(8.dp))
-                    CourseList(state.courses, state.selectedId, onCourseSelected)
+                    CourseList(courses.courses, courses.selectedCourseId, coursesActions::onCourseChosen)
+                    courses.errorMessage?.let {
+                        Spacer(Modifier.height(8.dp))
+                        InfoChip(it)
+                    }
                 }
             }
             if (selected != null) {
                 CoursePreview(selected, Modifier.align(Alignment.CenterEnd).padding(end = 24.dp, top = 80.dp))
             }
-            if (state.courses.isEmpty()) {
+            if (courses.courses.isEmpty()) {
                 Text(
                     text = "\"경기도\" 라고 말해보세요",
                     color = PleosColors.TextPrimary,
@@ -133,9 +143,9 @@ private fun SearchField(query: String, onQueryChange: (String) -> Unit, onClear:
 
 @Composable
 private fun CourseList(
-    courses: List<CourseItem>,
+    courses: List<CourseSummary>,
     selectedId: String?,
-    onCourseSelected: (CourseItem) -> Unit,
+    onCourseSelected: (String) -> Unit,
 ) {
     Column(
         modifier = Modifier.fillMaxWidth().background(PleosColors.Panel, RoundedCornerShape(24.dp)).padding(8.dp),
@@ -145,7 +155,7 @@ private fun CourseList(
 }
 
 @Composable
-private fun CourseRow(item: CourseItem, selected: Boolean, onSelect: (CourseItem) -> Unit) {
+private fun CourseRow(item: CourseSummary, selected: Boolean, onSelect: (String) -> Unit) {
     val shape = RoundedCornerShape(18.dp)
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -156,25 +166,30 @@ private fun CourseRow(item: CourseItem, selected: Boolean, onSelect: (CourseItem
                 if (selected) Modifier.background(PleosColors.AccentSelectedBg, shape).border(2.dp, PleosColors.Accent, shape)
                 else Modifier,
             )
-            .clickable { onSelect(item) }
+            .alpha(if (item.enabled) 1f else 0.45f)
+            .clickable { onSelect(item.id) }
             .padding(horizontal = 12.dp),
     ) {
+        val scene = rememberMapScene(item.shape)
         MapRouteView(
-            item.shape,
+            scene.unit(item.shape),
             Modifier.size(96.dp).clip(RoundedCornerShape(12.dp)),
-            strokeWidth = 2.dp, lineColor = Color(0xFFE02B2B), photo = item.mapRes,
+            strokeWidth = 2.dp, lineColor = Color(0xFFE02B2B),
         )
         Spacer(Modifier.width(20.dp))
         Column(Modifier.weight(1f)) {
             Text("${item.label}. ${item.name}", color = PleosColors.TextPrimary, fontSize = 30.sp, fontWeight = FontWeight.Medium)
-            Text("${item.distanceKm}km · 약 ${item.minutes}분", color = PleosColors.TextSecondary, fontSize = 22.sp)
+            Text(
+                if (item.enabled) "${item.distanceKm.roundToInt()}km · 약 ${item.estimatedMinutes}분" else "준비 중",
+                color = PleosColors.TextSecondary, fontSize = 22.sp,
+            )
         }
         if (selected) Text("선택", color = PleosColors.Accent, fontSize = 24.sp)
     }
 }
 
 @Composable
-private fun CoursePreview(course: CourseItem, modifier: Modifier = Modifier) {
+private fun CoursePreview(course: CourseSummary, modifier: Modifier = Modifier) {
     Box(
         modifier
             .size(width = 700.dp, height = 640.dp)
@@ -182,7 +197,8 @@ private fun CoursePreview(course: CourseItem, modifier: Modifier = Modifier) {
             .clip(RoundedCornerShape(28.dp))
             .border(4.dp, Color.White, RoundedCornerShape(28.dp)),
     ) {
-        MapRouteView(course.shape, Modifier.fillMaxSize(), strokeWidth = 9.dp, showStart = true, focus = true, photo = course.mapRes)
+        val scene = rememberMapScene(course.shape)
+        MapRouteView(scene.unit(course.shape), Modifier.fillMaxSize(), strokeWidth = 9.dp, showStart = true)
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
@@ -191,8 +207,6 @@ private fun CoursePreview(course: CourseItem, modifier: Modifier = Modifier) {
                 .background(PleosColors.Rail, RoundedCornerShape(18.dp))
                 .padding(horizontal = 24.dp, vertical = 14.dp),
         ) {
-            Text("♥", color = PleosColors.Pink, fontSize = 26.sp)
-            Spacer(Modifier.width(8.dp))
             Text(
                 text = "${course.label} ${course.name} 미리보기 · 지도 위 ${course.name.removeSuffix(" 코스")} 모양",
                 color = PleosColors.TextPrimary,
@@ -202,30 +216,15 @@ private fun CoursePreview(course: CourseItem, modifier: Modifier = Modifier) {
     }
 }
 
-// ---- 미리보기 / 임시 연결 (가짜 데이터) ----
-
-/** 상태를 이 함수 안에서 들고 있는 임시 버전. ViewModel(D)이 연결되면 쓰지 않아요. */
-@Composable
-fun RegionScreenWithFakeData(initialQuery: String = "", onCourseSelected: (CourseItem) -> Unit = {}) {
-    var query by remember { mutableStateOf(initialQuery) }
-    var selectedId by remember { mutableStateOf<String?>(null) }
-    PleosTheme {
-        RegionScreen(
-            state = RegionUiState(query, FakeRegionSource.search(query), selectedId),
-            onQueryChange = { query = it; selectedId = null },
-            onClear = { query = ""; selectedId = null },
-            onCourseSelected = { selectedId = it.id; onCourseSelected(it) },
-        )
-    }
-}
+// ---- 미리보기 (D 의 가짜 값 FakeUiStates) ----
 
 @Preview(widthDp = 1280, heightDp = 800, name = "경기도 입력 - 코스 3개")
 @Composable
 private fun RegionScreenPreview() {
     PleosTheme {
         RegionScreen(
-            state = RegionUiState("경기도", FakeRegionSource.search("경기도")),
-            onQueryChange = {}, onClear = {}, onCourseSelected = {},
+            FakeUiStates.region.copy(query = "경기도"), FakeUiStates.courses.copy(selectedCourseId = null),
+            RegionActions.Noop, CoursesActions.Noop,
         )
     }
 }
@@ -234,10 +233,7 @@ private fun RegionScreenPreview() {
 @Composable
 private fun RegionScreenSelectedPreview() {
     PleosTheme {
-        RegionScreen(
-            state = RegionUiState("경기도", FakeRegionSource.search("경기도"), selectedId = "heart"),
-            onQueryChange = {}, onClear = {}, onCourseSelected = {},
-        )
+        RegionScreen(FakeUiStates.region.copy(query = "경기도"), FakeUiStates.courses, RegionActions.Noop, CoursesActions.Noop)
     }
 }
 
@@ -245,6 +241,6 @@ private fun RegionScreenSelectedPreview() {
 @Composable
 private fun RegionScreenEmptyPreview() {
     PleosTheme {
-        RegionScreen(state = RegionUiState(), onQueryChange = {}, onClear = {}, onCourseSelected = {})
+        RegionScreen(RegionUiState(), CoursesUiState(), RegionActions.Noop, CoursesActions.Noop)
     }
 }

@@ -1,6 +1,5 @@
 package ai.pleosapp.drive.ui.common
 
-import ai.pleosapp.drive.R
 import ai.pleosapp.drive.ui.theme.PleosColors
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Canvas
@@ -65,8 +64,9 @@ fun SideRail(modifier: Modifier = Modifier, dimmed: Boolean = false) {
 }
 
 /**
- * 지도 SDK 가 없어서 지도 사진(map_suwon)을 배경으로 써요. D 의 지도 표시(PLEOS-39)가 되면 바꿔요.
- * 지도·코스 경로는 항상 이 실제 사진 위에 그려요(가짜 그림 지도는 쓰지 않아요).
+ * 지도 SDK 가 없어서 지도 자리를 비워 둬요. D 의 지도 표시(PLEOS-39)나 지도 사진이 생기면 바꿔요.
+ * [photo] 를 주면 그 지도 사진 위에, 안 주면 단색 배경 위에 코스를 그려요.
+ * 지도·코스 경로는 가짜 그림 지도 위가 아니라 실제 지도 사진 위에 그려야 해요(사진은 위경도 범위가 정해지면 연결).
  *
  * 기본은 영역을 꽉 채우도록 가운데를 잘라 보여줘요. [focus] 에 코스 점(0~1)을 주면 그 코스가
  * 영역에 꽉 차도록 확대해요. [overlay] 에서는 [MapPhotoTransform] 으로 사진 좌표(0~1)를 화면 좌표로 바꿔
@@ -76,12 +76,18 @@ fun SideRail(modifier: Modifier = Modifier, dimmed: Boolean = false) {
 fun MapPlaceholder(
     modifier: Modifier = Modifier.fillMaxSize(),
     focus: List<Offset>? = null,
-    @DrawableRes photo: Int = R.drawable.map_suwon,
+    @DrawableRes photo: Int? = null,
     focusPadding: Float = 0.05f,
     overlay: (DrawScope.(MapPhotoTransform) -> Unit)? = null,
 ) {
-    val image = ImageBitmap.imageResource(photo)
+    val image = photo?.let { ImageBitmap.imageResource(it) }
     Canvas(modifier = modifier.clipToBounds().background(PleosColors.MapBackground)) {
+        if (image == null) {
+            // 지도 사진이 없으면 배경색 위에 정사각형 좌표계(0~1)로 그려요. MapFrame 이 이미 가로세로 비율을 맞춰 줘요.
+            val side = minOf(size.width, size.height)
+            overlay?.invoke(this, MapPhotoTransform((size.width - side) / 2f, (size.height - side) / 2f, side, side))
+            return@Canvas
+        }
         val iw = image.width.toFloat()
         val ih = image.height.toFloat()
         val cover = maxOf(size.width / iw, size.height / ih)
@@ -137,8 +143,21 @@ class MapPhotoTransform(private val left: Float, private val top: Float, private
     fun toScreen(p: Offset) = Offset(left + p.x * w, top + p.y * h)
 }
 
+/** 0~1 좌표 점들을 이은 선. [Offset.Unspecified] 를 만나면 펜을 떼요. */
+fun DrawScope.drawPolyline(t: MapPhotoTransform, route: List<Offset>, color: Color, width: Float) {
+    val path = Path()
+    var penUp = true
+    route.forEach { p ->
+        if (p.isUnspecified) { penUp = true; return@forEach }
+        val o = t.toScreen(p)
+        if (penUp) path.moveTo(o.x, o.y) else path.lineTo(o.x, o.y)
+        penUp = false
+    }
+    drawPath(path, color, style = Stroke(width = width, cap = StrokeCap.Round, join = StrokeJoin.Round))
+}
+
 /**
- * 지도 사진 위에 코스 경로를 그린 그림. 코스 미리보기·썸네일·길이 선택 카드·도착 결과에 써요.
+ * 지도 위에 코스 경로를 그린 그림. 코스 미리보기·썸네일·길이 선택 카드·도착 결과에 써요.
  * [focus] 가 true 면 코스가 영역에 꽉 차게 확대하고, false 면 사진 전체를 보여줘요(작은 코스가 작게 보여요).
  * [innerColor] 를 주면 가운데에 가는 선을 하나 더 그려요(도착 결과의 파랑+빨강 선).
  */
@@ -151,21 +170,12 @@ fun MapRouteView(
     innerColor: Color? = null,
     showStart: Boolean = false,
     focus: Boolean = false,
-    @DrawableRes photo: Int = R.drawable.map_suwon,
+    @DrawableRes photo: Int? = null,
 ) {
     MapPlaceholder(modifier, focus = if (focus) route else null, photo = photo) { t ->
         if (route.size > 1) {
-            val path = Path()
-            var penUp = true
-            route.forEach { p ->
-                if (p.isUnspecified) { penUp = true; return@forEach }
-                val o = t.toScreen(p)
-                if (penUp) path.moveTo(o.x, o.y) else path.lineTo(o.x, o.y)
-                penUp = false
-            }
-            fun stroke(w: Float) = Stroke(width = w, cap = StrokeCap.Round, join = StrokeJoin.Round)
-            drawPath(path, lineColor, style = stroke(strokeWidth.toPx()))
-            if (innerColor != null) drawPath(path, innerColor, style = stroke(strokeWidth.toPx() * 0.4f))
+            drawPolyline(t, route, lineColor, strokeWidth.toPx())
+            if (innerColor != null) drawPolyline(t, route, innerColor, strokeWidth.toPx() * 0.4f)
             if (showStart) {
                 val s = t.toScreen(route.first { it.isSpecified })
                 drawCircle(Color.White, strokeWidth.toPx() * 1.6f, s)
