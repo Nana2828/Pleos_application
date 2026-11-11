@@ -49,6 +49,12 @@ function renderTrip(trip) {
   const minutes = nonNegativeNumber(trip.estimatedDurationMin);
   $('#duration').textContent = planned ? minutes === null ? '—' : `${minutes}분` : durationText(trip.durationSec);
   $('#fuel').textContent = measurementText(trip.avgFuelEconomy);
+  $('#fuel-unit').textContent = trip.efficiencyUnit === 'kwh' ? 'km/kWh' : trip.efficiencyUnit === 'l' || trip.isDemo ? 'km/L' : '—';
+  const time = iso => typeof iso === 'string' && Number.isFinite(Date.parse(iso)) ? new Date(iso).toLocaleString('ko-KR', {hour12: false}) : '—';
+  $('#trip-times').textContent = planned ? '' : '시작 ' + time(trip.startedAt) + ' · 종료 ' + time(trip.endedAt);
+  $('#trip-times').hidden = planned;
+  $('.demo-badge').textContent = trip.pathSource === 'vehicle_qr' ? 'VEHICLE QR' : 'DEMO / 01';
+  $('.demo-badge').setAttribute('aria-label', trip.pathSource === 'vehicle_qr' ? '차량 QR 주행 기록' : '샘플 데이터');
   $('#region').textContent = displayText(trip.region);
   window.driveRouteMap.updateTrip(trip);
 }
@@ -82,7 +88,17 @@ async function loadTripFromUrl() {
   const requestVersion = ++tripRequestVersion;
   setTripState('loading', '주행 ID를 확인하고 있습니다.');
   try {
-    const ids = new URLSearchParams(location.search).getAll('tripId');
+    const params = new URLSearchParams(location.search);
+    const ids = params.getAll('tripId');
+    const payloads = params.getAll('d');
+    if (payloads.length > 1 || ids.length > 1) throw new Error('QR 주소에 중복된 데이터가 있습니다.');
+    if (params.has('d')) {
+      const trip = window.DRIVE_RUN_QR.decode(payloads[0], ids.length ? ids[0] : null);
+      renderTrip(trip);
+      setTripState('ready');
+      window.driveRouteMap.init();
+      return;
+    }
     // ID가 없는 기존 주소는 첫 번째 샘플로 열고, 빈 값이나 중복 ID는 거부합니다.
     const tripId = ids.length === 0 ? 'abc123' : ids[0];
     if (ids.length > 1 || !/^[A-Za-z0-9_-]{1,64}$/.test(tripId)) {

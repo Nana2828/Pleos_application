@@ -50,7 +50,7 @@ cases.forEach((c,i) => {
     .replace('<link rel="stylesheet" href="styles.css" />','<style>'+sheet+'</style>')
     .replace('<script src="course-data.js"></script>',courseFetch+'<script src="course-data.js"></script>')
     .replace('<script src="map.js"></script>',(c.assetFailure?failedAssets:mapDouble)+'<script src="map.js"></script>')
-    .replace(/src="(data|course-data|map|app)\.js"/g, (_, name) => 'src="'+base+name+'.js"'));
+    .replace(/src="(data|course-data|map|qr-data|app)\.js"/g, (_, name) => 'src="'+base+name+'.js"'));
 });
 const script = `const cases=${JSON.stringify(cases)};
 Promise.all(cases.map(c=>new Promise(resolve=>{

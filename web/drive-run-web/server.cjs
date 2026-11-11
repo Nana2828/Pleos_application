@@ -8,7 +8,7 @@ const os = require('node:os');
 const HOST = '0.0.0.0';
 const PORT = 5173;
 // 프로젝트의 웹 파일만 공개합니다.
-const files = new Set(['index.html', 'styles.css', 'data.js', 'course-data.js', 'map.js', 'app.js', 'data/courses/bucheon-cat-91min.json']);
+const files = new Set(['index.html', 'styles.css', 'data.js', 'course-data.js', 'map.js', 'qr-data.js', 'app.js', 'data/courses/bucheon-cat-91min.json']);
 const types = {
   '.html': 'text/html; charset=utf-8',
   '.css': 'text/css; charset=utf-8',

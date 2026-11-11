@@ -20,7 +20,7 @@
           <p id="trip-message-detail">주행 ID를 확인하고 있습니다.</p>
           <a id="trip-sample-link" href="?tripId=abc123" hidden>기본 샘플 기록 보기</a>
         </div>
-        <div class="heading-row"><div><h1 id="result-title" lang="en">DRIVE RECORD</h1><p class="subline" id="drive-date">2026.11.05 · 수원시</p></div></div>
+        <div class="heading-row"><div><h1 id="result-title" lang="en">DRIVE RECORD</h1><p class="subline" id="drive-date">2026.11.05 · 수원시</p><p class="subline" id="trip-times" hidden></p></div></div>
         <article class="metric metric-hero" aria-labelledby="distance-label">
           <span id="distance-label" class="metric-label"><span id="distance-kind">주행 거리</span> <span lang="en">DISTANCE</span></span>
           <div class="hero-reading"><strong id="distance">42.3</strong><small>KM</small></div>
@@ -41,7 +41,7 @@
         </div>
         <div class="metric-grid" role="group" aria-label="주행 보조 지표">
           <article class="metric"><span id="duration-label" class="metric-label">주행 시간</span><div><strong id="duration">1:24:10</strong></div></article>
-          <article class="metric"><span class="metric-label">평균 연비</span><div><strong id="fuel">12.8</strong><small>KM/L</small></div></article>
+          <article class="metric"><span class="metric-label">평균 연비</span><div><strong id="fuel">12.8</strong><small id="fuel-unit">km/L</small></div></article>
           <article class="metric"><span class="metric-label">주행 지역</span><div><strong class="place" id="region">수원시</strong></div></article>
         </div>
       </section>
@@ -71,6 +71,7 @@
   <script src="data.js"></script>
   <script src="course-data.js"></script>
   <script src="map.js"></script>
+  <script src="qr-data.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

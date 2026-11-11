@@ -132,7 +132,9 @@ window.driveRouteMap = (() => {
       demo: '데모 경로 · 요약 수치는 별도 샘플',
       planned: waypoints.length ? `계획 경로 · ${waypoints.length}개 경유지 · 실주행 아님`
         : trip.isDemo === false ? '계획 경로 · 실제 이동 기록 아님' : '계획 경로(데모) · 실측 아님',
-      recorded: trip.isDemo === false ? '이동 경로 · 서버 제공 좌표' : '이동 경로(데모) · 실측 아님'
+      recorded: trip.isDemo === false
+        ? (trip.pathSource === 'vehicle_qr' ? '이동 경로 · 차량 QR 좌표' : '이동 경로 · 서버 제공 좌표')
+        : '이동 경로(데모) · 실측 아님'
     };
     document.querySelector('#route-notice').textContent = typeof trip.routeType === 'string' && Object.hasOwn(notices, trip.routeType)
       ? notices[trip.routeType] : '경로 유형 미확인 · 실측 여부 미확인';
