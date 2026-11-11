@@ -135,7 +135,7 @@ object FakeUiStates {
         // 실제 주행은 코스와 조금 어긋난다는 느낌만 낸다.
         drivenPath = heartShape.mapIndexed { i, p -> MapPoint(p.lat + 0.0006 * sin(i * 0.7), p.lng + 0.0006 * cos(i * 0.5)) },
         courseShape = heartShape,
-        resultUrl = "https://example.com/drive/demo-001",
+        resultUrl = "http://192.168.0.12:5173/",
         upload = UploadStatus.DONE,
     )
 

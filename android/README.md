@@ -29,6 +29,23 @@ cd android
   - `GRADLE_USER_HOME=C:/Android/.gradle` (Gradle 캐시)
   - `PLEOS_BUILD_DIR=C:/Android/build/pleos-drive` (빌드 결과물. 이때 APK는 이 폴더 아래에 생겨요)
 
+## 📷 결과 QR 웹 주소 설정 (PLEOS-64)
+
+결과 화면 QR은 폰 웹(은빈 님 `web/drive-run-web`)을 열어요. 노트북에서 웹 서버를 켜고, 그 주소를 `android/local.properties`에 적은 뒤 다시 빌드해요.
+
+1. 노트북에서 폰 웹 서버 켜기: `cd web/drive-run-web` → `node server.cjs`
+   - 화면에 `Wi-Fi: http://192.168.x.x:5173` 처럼 노트북 주소가 나와요.
+2. `android/local.properties`에 한 줄 추가 (이 파일은 git에 안 올라가요)
+   ```properties
+   pleos.webUrl=http://192.168.x.x:5173/
+   ```
+3. 다시 빌드·설치: `./gradlew installDebug`
+
+- **와이파이가 바뀌면 노트북 IP도 바뀌어요.** 1번에서 나온 새 주소로 2번 줄을 고치고 다시 빌드해요.
+- 폰과 노트북이 **같은 와이파이**에 있어야 QR이 열려요.
+- 값이 없거나 형식이 틀리면(`http://` 빠짐, `?`·`#` 포함) 결과 화면 QR 자리에 "웹 주소가 설정되지 않았어요"가 나와요.
+- 한 번만 다른 주소로 빌드하려면 `./gradlew installDebug -Ppleos.webUrl=http://...` 처럼 넘겨도 돼요.
+
 ## 패키지 나누기 (충돌 줄이기)
 
 ```
