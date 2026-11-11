@@ -95,7 +95,11 @@ data class DemoConfig(
     /** 배속 하한. 아주 짧은 구간이 너무 느리게 재생되지 않게 */
     val minSpeed: Double = 10.0,
     /** 결과 QR에 넣을 주소. ⬜ 시연용 폰 웹 주소가 정해지면 바꾼다 */
-    val resultUrl: String = "https://pleos-demo.example/r/demo-001",
+    /**
+     * 결과 QR에 넣을 폰 웹 기본 주소 (PLEOS-64). 앱에서는 `local.properties`의 `pleos.webUrl`([WebBaseUrl]).
+     * null이면 QR 대신 "웹 주소가 설정되지 않았어요"를 보여 준다.
+     */
+    val resultUrl: String? = null,
     val appVersion: String = "0.1.0-demo",
     /** 시작점까지 이만큼 남으면 "도착"으로 표시 */
     val arrivedAtStartM: Double = 40.0,

@@ -103,11 +103,16 @@ fun ResultScreen(
             val qrUrl = remember(state.resultUrl, state.startedAtEpochMs, state.endedAtEpochMs, state.drivenPath) {
                 state.resultUrl?.takeIf { state.upload == UploadStatus.DONE }?.let { ResultLink.build(it, state) }
             }
-            QrCode(qrUrl, "결과를 준비하는 중이에요", Modifier.size(300.dp))
+            // 웹 주소가 빌드에 없으면(PLEOS-64, local.properties 의 pleos.webUrl) QR 자리에 그렇게 알려 줘요
+            val noWebUrl = state.upload == UploadStatus.DONE && state.resultUrl == null
+            QrCode(qrUrl, if (noWebUrl) "웹 주소가 설정되지 않았어요" else "결과를 준비하는 중이에요", Modifier.size(300.dp))
             Spacer(Modifier.height(12.dp))
             when (state.upload) {
                 UploadStatus.UPLOADING -> Text("결과를 보내는 중이에요", color = PleosColors.TextSecondary, fontSize = 26.sp, textAlign = TextAlign.Center)
-                UploadStatus.DONE -> Text("QR을 찍어 친구와 비교해요", color = PleosColors.TextSecondary, fontSize = 26.sp, textAlign = TextAlign.Center)
+                UploadStatus.DONE -> Text(
+                    if (noWebUrl) "local.properties 에 pleos.webUrl 을 넣고 다시 빌드해요" else "QR을 찍어 친구와 비교해요",
+                    color = PleosColors.TextSecondary, fontSize = if (noWebUrl) 20.sp else 26.sp, textAlign = TextAlign.Center,
+                )
                 UploadStatus.FAILED -> Text(
                     "결과를 보내지 못했어요. 눌러서 다시 보내기", color = PleosColors.DangerText, fontSize = 24.sp, textAlign = TextAlign.Center,
                     modifier = Modifier.clickable(onClick = actions::onRetryUpload).padding(8.dp),

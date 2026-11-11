@@ -1,7 +1,23 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
+}
+
+/**
+ * 결과 QR에 넣을 폰 웹 기본 주소 (PLEOS-64). 노트북 IP는 와이파이마다 바뀌어서 git에 올리지 않는
+ * `android/local.properties`에 적는다. 예: `pleos.webUrl=http://192.168.0.12:5173/`
+ * 명령줄 `-Ppleos.webUrl=...`이 있으면 그 값을 먼저 쓴다. 없으면 결과 화면에 "웹 주소가 설정되지 않았어요"가 나온다.
+ */
+val resultWebUrl: String = (findProperty("pleos.webUrl") as String?)
+    ?: rootProject.file("local.properties").takeIf { it.isFile }?.let { f ->
+        Properties().apply { f.inputStream().use { load(it) } }.getProperty("pleos.webUrl")
+    }
+    ?: ""
+if (resultWebUrl.isBlank()) {
+    logger.warn("pleos.webUrl 이 없어요. 결과 QR을 쓰려면 android/local.properties 에 pleos.webUrl=http://<노트북 IP>:5173/ 을 넣으세요.")
 }
 
 android {
@@ -16,6 +32,7 @@ android {
         targetSdk = 34
         versionCode = 1
         versionName = "0.1.0"
+        buildConfigField("String", "RESULT_WEB_URL", "\"" + resultWebUrl.trim().replace("\\", "").replace("\"", "") + "\"")
     }
 
     buildTypes {
@@ -33,6 +50,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     // 단위 시험에서 시연 데이터(assets/demo)를 그대로 읽는다
     sourceSets["test"].resources.srcDir("src/main/assets")

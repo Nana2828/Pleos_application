@@ -30,7 +30,9 @@ class DemoFlowEngineTest {
     /** 2026-11-14 10:12 KST */
     private val wall = 1_794_618_720_000L
 
-    private fun engine() = DemoFlowEngine(repo, data, wallClock = { wall })
+    private val webUrl = "http://192.168.0.12:5173/"
+
+    private fun engine() = DemoFlowEngine(repo, data, DemoConfig(resultUrl = webUrl), wallClock = { wall })
 
     /** 지역을 입력하고 진짜 코스를 골라 안내를 시작한다. */
     private fun DemoFlowEngine.startDemo(query: String = "부천", courseId: String = DemoCourseFiles.CAT) {
@@ -174,7 +176,7 @@ class DemoFlowEngineTest {
             assertEquals(EfficiencyUnit.KM_PER_KWH, eff.unit)
             assertEquals(id, 6.0, eff.value, 0.3)
             assertEquals(UploadStatus.DONE, r.upload)
-            assertNotNull(r.resultUrl)
+            assertEquals(webUrl, r.resultUrl)
             assertTrue(r.drivenPath.size > 100)
 
             val json = checkNotNull(e.state.demo.driveResultJson)
@@ -185,6 +187,19 @@ class DemoFlowEngineTest {
             assertFalse(e.state.demo.playing)
             assertEquals(1.0, e.state.demo.courseProgress, 0.0)
         }
+    }
+
+    /** 웹 주소가 빌드에 없으면 가짜 주소를 넣지 않는다 (PLEOS-64). 결과 화면은 "웹 주소가 설정되지 않았어요" */
+    @Test fun noWebUrlMeansNoQrAddress() {
+        val e = DemoFlowEngine(repo, data, wallClock = { wall })
+        e.startDemo()
+        e.skipToCourseStart()
+        e.skipToNearFinish()
+        var guard = 0
+        while (e.state.step != DemoStep.RESULT && guard++ < 2_000) e.tick(100)
+        assertEquals(DemoStep.RESULT, e.state.step)
+        assertNull(e.state.result.resultUrl)
+        assertEquals(UploadStatus.DONE, e.state.result.upload)
     }
 
     @Test fun drivingScreenShowsArrivalTimeLikeARealDrive() {

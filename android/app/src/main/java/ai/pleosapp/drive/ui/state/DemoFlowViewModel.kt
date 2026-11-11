@@ -1,5 +1,6 @@
 package ai.pleosapp.drive.ui.state
 
+import ai.pleosapp.drive.BuildConfig
 import ai.pleosapp.drive.core.course.DemoCourseFiles
 import ai.pleosapp.drive.core.course.DemoCourseRepository
 import ai.pleosapp.drive.core.drive.ContractCodec
@@ -127,7 +128,9 @@ class DemoFlowViewModel(app: Application) : AndroidViewModel(app) {
                 stops = DemoCourseFiles.stops(c.id).takeIf { it in files }?.let { DemoStopsCodec.decode(asset(it)) }.orEmpty(),
             )
         }
-        return DemoFlowEngine(repo, data)
+        val webUrl = WebBaseUrl.parse(BuildConfig.RESULT_WEB_URL)
+        if (webUrl == null) Log.w(TAG, "결과 QR 웹 주소가 없거나 틀림: '${BuildConfig.RESULT_WEB_URL}' (android/local.properties 의 pleos.webUrl)")
+        return DemoFlowEngine(repo, data, DemoConfig(resultUrl = webUrl))
     }
 
     /** 재생 중이면 흐른 시간만큼 진행한다. Main 스레드에서만 엔진을 만진다. */
