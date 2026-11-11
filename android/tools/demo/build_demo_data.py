@@ -106,10 +106,15 @@ class GpsError:
 
 # ---------- OSRM ----------
 
-def osrm_route(points):
-    """points = [(경도, 위도), ...] 순서대로 지나는 경로"""
+def osrm_route(points, bearings=None):
+    """points = [(경도, 위도), ...] 순서대로 지나는 경로.
+
+    bearings = 점마다 (방위각, 허용 범위) 또는 None. 그 방향으로 달리는 도로에 붙인다(PLEOS-63 들를 곳의 이탈·합류 지점).
+    """
     coords = ";".join(f"{lon:.6f},{lat:.6f}" for lon, lat in points)
     url = f"{OSRM}/route/v1/driving/{coords}?steps=true&overview=full&geometries=geojson&continue_straight=true"
+    if bearings:
+        url += "&bearings=" + ";".join("" if b is None else f"{b[0]},{b[1]}" for b in bearings)
     req = urllib.request.Request(url, headers={"User-Agent": "pleos-demo-data-builder"})
     with urllib.request.urlopen(req, timeout=30) as res:
         data = json.loads(res.read().decode("utf-8"))

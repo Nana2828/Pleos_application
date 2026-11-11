@@ -1,0 +1,56 @@
+{
+  "id": "hwaseong-pois",
+  "type": "poi-list",
+  "generatedAt": "2026-11-10",
+  "pois": [
+    {
+      "id": "hwaseong-urikkot-botanical-garden",
+      "name": "화성시 우리꽃식물원",
+      "latitude": 37.114819,
+      "longitude": 126.882863,
+      "poiName": "화성시 우리꽃식물원",
+      "poiId": "",
+      "poiSubId": "0",
+      "address": "경기도 화성시 팔탄면 3.1만세로 777-17",
+      "postalCode": "18577",
+      "phone": "031-5189-6160",
+      "source": "https://www.ktriptips.com/kor/tourspot/2514563"
+    },
+    {
+      "id": "hwaseong-sikyeom-hot-spring",
+      "name": "화성식염온천",
+      "latitude": 37.093544,
+      "longitude": 126.86689,
+      "poiName": "화성식염온천",
+      "poiId": "",
+      "poiSubId": "0",
+      "address": "경기도 화성시 장안면 황골길 56-1",
+      "postalCode": "18581",
+      "phone": "031-351-9700",
+      "source": "https://www.ktriptips.com/kor/tourspot/619672"
+    },
+    {
+      "id": "hwaseong-wolmun-hot-spring-resort",
+      "name": "월문온천휴양지",
+      "latitude": 37.114591,
+      "longitude": 126.876632,
+      "poiName": "월문온천휴양지",
+      "poiId": "",
+      "poiSubId": "0",
+      "address": "경기도 화성시 팔탄면 버들로1597번길 5",
+      "postalCode": "18577",
+      "phone": "031-226-5000",
+      "source": "https://www.ktriptips.com/kor/tourspot/631411"
+    }
+  ],
+  "unresolved": [
+    {
+      "name": "카페율",
+      "note": "같은 이름의 화성 카페를 찾지 못함. 비슷한 이름: 율브런치카페(경기도 화성시 향남읍 행정죽전로1길 49, 2018~2022년 자료, 현재 영업 여부 미확인). 정확한 주소 확인 후 좌표 추가 필요"
+    },
+    {
+      "name": "더 온실",
+      "note": "같은 이름의 화성 카페를 찾지 못함. 비슷한 온실 카페: 더포레(경기도 화성시 향남읍 두렁바위길 49-13), 바오밥 식물원 베이커리 앤 카페(화성시 매송면 매송고색로395번길 11). 정확한 주소 확인 후 좌표 추가 필요"
+    }
+  ]
+}
