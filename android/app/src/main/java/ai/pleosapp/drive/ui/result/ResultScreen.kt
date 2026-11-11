@@ -92,6 +92,13 @@ fun ResultScreen(
             }
             Spacer(Modifier.height(20.dp))
             Text(formatPeriod(state.startedAtEpochMs, state.endedAtEpochMs), color = PleosColors.TextSecondary, fontSize = 26.sp)
+            // 들렀던 곳 (PLEOS-63): 위 거리·시간·연비에는 다녀온 구간이 빠져 있다고 알려 줘요
+            if (state.visitedStops.isNotEmpty()) {
+                Text(
+                    "들른 곳: ${state.visitedStops.joinToString(", ")} (기록 제외 ${formatDuration(state.pausedSec)})",
+                    color = PleosColors.Stop, fontSize = 20.sp, maxLines = 1,
+                )
+            }
             Spacer(Modifier.height(16.dp))
             val qrUrl = remember(state.resultUrl, state.startedAtEpochMs, state.endedAtEpochMs, state.drivenPath) {
                 state.resultUrl?.takeIf { state.upload == UploadStatus.DONE }?.let { ResultLink.build(it, state) }

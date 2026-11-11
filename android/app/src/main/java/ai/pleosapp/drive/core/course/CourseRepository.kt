@@ -41,6 +41,9 @@ object DemoCourseFiles {
 
     /** 가짜 주행 신호 (가산 → 시작점 → 코스 한 바퀴) */
     fun drive(id: String) = "$id.drive.jsonl"
+
+    /** 코스 주변 들를 곳과 왕복 경로 (PLEOS-63, `tools/demo/build_demo_stops.py`). 없는 코스도 있다 */
+    fun stops(id: String) = "$id.stops.json"
 }
 
 /**

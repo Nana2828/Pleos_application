@@ -22,6 +22,12 @@ object PleosColors {
     val MapBackground = Color(0xFFEDEAE3)
     val MapRoad = Color(0xFFFFFFFF)
     val MapRoadMajor = Color(0xFFF6D98B)
+
+    /** 들를 곳 표시와 들를 곳 경로 (PLEOS-63) */
+    val Stop = Color(0xFF1DB37A)
+    val StopBg = Color(0xFF173A30)
+    /** 기록 일시정지 표시 */
+    val Paused = Color(0xFFFFB547)
 }
 
 @Composable

@@ -18,6 +18,10 @@ data class ResultUiState(
     /** QR에 담을 결과 페이지 주소. 아직 없으면 null (전송 중·실패) */
     val resultUrl: String? = null,
     val upload: UploadStatus = UploadStatus.UPLOADING,
+    /** 들렀던 장소 이름 (PLEOS-63). 거리·시간·효율에는 들렀다 온 구간이 빠져 있다 */
+    val visitedStops: List<String> = emptyList(),
+    /** 들렀다 온 동안 기록을 멈춘 시간(초). [startedAtEpochMs]~[endedAtEpochMs]에는 들어 있고 [durationSec]에는 없다 */
+    val pausedSec: Long = 0,
 )
 
 enum class UploadStatus { UPLOADING, DONE, FAILED }

@@ -78,7 +78,8 @@ object DemoRouteCodec {
         )
     }
 
-    private fun section(obj: JsonObject, where: String): RouteSection {
+    /** 구간 하나(접근·코스, PLEOS-63 들를 곳의 가는 길·돌아오는 길). `DemoStopsCodec`도 쓴다. */
+    internal fun section(obj: JsonObject, where: String): RouteSection {
         val geometry = coordinates(obj["geometry"], "$where.geometry")
         require(geometry.size >= 2) { "$where.geometry 점이 2개 이상이어야 합니다" }
         val stepsArr = obj["steps"] as? JsonArray ?: throw IllegalArgumentException("$where.steps 배열이 없습니다")

@@ -43,17 +43,31 @@ class ReplayPlayer(signals: List<DriveSignal>) {
     fun peek(): DriveSignal? = signals.getOrNull(index)
 
     /** 실제로 [realElapsedMs]만큼 흘렀을 때 재생 시간을 그만큼 × 배속 진행하고 그 사이 신호를 내보낸다. */
-    fun advanceBy(realElapsedMs: Long, sink: (DriveSignal) -> Unit): Int {
+    fun advanceBy(realElapsedMs: Long, sink: (DriveSignal) -> Unit): Int = advanceBy(realElapsedMs, NEVER, sink)
+
+    /**
+     * [advanceBy]와 같지만 [stopAfter]가 true가 되면 그 신호에서 멈춘다(재생 위치도 그 신호 시각).
+     * 들를 곳 이탈 지점에서 코스 재생을 멈출 때 쓴다(PLEOS-63).
+     */
+    fun advanceBy(realElapsedMs: Long, stopAfter: () -> Boolean, sink: (DriveSignal) -> Unit): Int {
         if (realElapsedMs <= 0 || isFinished) return 0
-        return seekTo(positionMs + (realElapsedMs * speed).roundToLong(), sink)
+        return seekTo(positionMs + (realElapsedMs * speed).roundToLong(), stopAfter, sink)
     }
 
     /** 파일 시간 [targetMs]까지 신호를 모두 내보낸다. 뒤로는 가지 않는다(처음부터는 [reset]). 보낸 신호 수를 돌려준다. */
-    fun seekTo(targetMs: Long, sink: (DriveSignal) -> Unit): Int {
+    fun seekTo(targetMs: Long, sink: (DriveSignal) -> Unit): Int = seekTo(targetMs, NEVER, sink)
+
+    /** [seekTo]와 같지만 [stopAfter]가 true가 되면 그 신호까지만 보내고 멈춘다. 다음 호출은 그다음 신호부터 이어 간다. */
+    fun seekTo(targetMs: Long, stopAfter: () -> Boolean, sink: (DriveSignal) -> Unit): Int {
         var sent = 0
         while (index < signals.size && signals[index].timeMs <= targetMs) {
-            sink(signals[index++])
+            val s = signals[index++]
+            sink(s)
             sent++
+            if (stopAfter()) {
+                positionMs = maxOf(positionMs, s.timeMs)
+                return sent
+            }
         }
         positionMs = maxOf(positionMs, minOf(targetMs, endMs))
         return sent
@@ -74,6 +88,10 @@ class ReplayPlayer(signals: List<DriveSignal>) {
     fun reset() {
         index = 0
         positionMs = startMs
+    }
+
+    private companion object {
+        val NEVER: () -> Boolean = { false }
     }
 }
 

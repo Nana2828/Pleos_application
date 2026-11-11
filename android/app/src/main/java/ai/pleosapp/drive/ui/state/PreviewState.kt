@@ -18,6 +18,10 @@ data class PreviewUiState(
     val minutesToStart: Int? = null,
     /** 경로 데이터가 있어 안내를 시작할 수 있으면 true */
     val canStartGuidance: Boolean = false,
+    /** 코스 주변 추천 장소 (PLEOS-63). 코스 순서(이탈 지점 순). 없으면 빈 목록 */
+    val stops: List<StopOption> = emptyList(),
+    /** 들르기로 고른 장소 id */
+    val selectedStopIds: Set<String> = emptySet(),
 )
 
 interface PreviewActions {
@@ -27,8 +31,12 @@ interface PreviewActions {
     /** "이전": 지역 입력·코스 목록으로 돌아간다(입력한 글자는 그대로). */
     fun onPreviewBack()
 
+    /** 추천 장소를 들를 곳으로 고르거나 뺀다 (PLEOS-63) */
+    fun onToggleStop(stopId: String)
+
     object Noop : PreviewActions {
         override fun onStartGuidance() {}
         override fun onPreviewBack() {}
+        override fun onToggleStop(stopId: String) {}
     }
 }

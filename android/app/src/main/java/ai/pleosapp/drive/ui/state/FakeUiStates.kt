@@ -123,6 +123,22 @@ object FakeUiStates {
         currentPosition = heartShape[heartShape.size * 2 / 3],
     )
 
+    // 5-1. 들를 곳에 도착해 기록을 멈춘 상태 (PLEOS-63)
+    val drivingAtStop = driving.copy(
+        isRecording = false,
+        nextTurn = null,
+        arrivalAtEpochMs = null,
+        remainingKm = null,
+        remainingMinutes = null,
+        speedKph = 0.0,
+        stop = StopStatus(name = "화성식염온천", phase = StopPhase.ARRIVED),
+        stopPoints = listOf(heartShape[heartShape.size * 2 / 3].let { MapPoint(it.lat + 0.01, it.lng + 0.01) }),
+        detourRoute = heartShape[heartShape.size * 2 / 3].let { MapPoint(it.lat, it.lng) }.let { from ->
+            listOf(from, MapPoint(from.lat + 0.005, from.lng + 0.002), MapPoint(from.lat + 0.01, from.lng + 0.01))
+        },
+        currentPosition = heartShape[heartShape.size * 2 / 3].let { MapPoint(it.lat + 0.01, it.lng + 0.01) },
+    )
+
     // 6. 도착 결과
     val result = ResultUiState(
         courseName = heartCourse.name,
