@@ -8,21 +8,22 @@ import org.junit.Test
 class DemoRouteCodecTest {
 
     @Test fun decodesRealAsset() {
-        val route = DemoRouteCodec.decode(DemoAssets.text("demo-route.json"))
+        val route = DemoRouteCodec.decode(DemoAssets.text("bucheon-cat-91min.route.json"))
         assertEquals("bucheon-cat-91min", route.courseId)
-        // 부천 근처, 위도·경도 순서가 바뀌지 않았는지
-        assertEquals(37.452, route.origin.lat, 1e-6)
-        assertEquals(126.758, route.origin.lon, 1e-6)
+        // 가짜 현재 위치 = LG가산디지털센터 (PLEOS-62). 위도·경도 순서가 바뀌지 않았는지
+        assertEquals(37.482336, route.origin.lat, 1e-6)
+        assertEquals(126.879651, route.origin.lon, 1e-6)
         for (section in listOf(route.approach, route.course)) {
             assertTrue(section.geometry.size > 10)
-            assertTrue(section.geometry.all { it.lat in 37.3..37.6 && it.lon in 126.6..126.9 })
+            assertTrue(section.geometry.all { it.lat in 37.3..37.6 && it.lon in 126.6..126.95 })
             assertTrue(section.steps.isNotEmpty())
             assertEquals("depart", section.steps.first().type)
             assertEquals("arrive", section.steps.last().type)
             // 마지막 안내 위치는 구간 길이와 같다
             assertEquals(section.distanceM, section.steps.last().atM, 1.0)
         }
-        assertTrue(route.approach.distanceM in 2_500.0..4_000.0)
+        // 가산 → 부천 시작점 도로 약 15.5km
+        assertTrue(route.approach.distanceM in 14_000.0..17_000.0)
         assertTrue(route.course.distanceM in 48_000.0..53_000.0)
         assertEquals(3, route.course.steps.count { it.modifier == "uturn" })
     }

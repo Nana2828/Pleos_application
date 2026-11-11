@@ -4,6 +4,7 @@ import ai.pleosapp.drive.ui.confirm.ConfirmScreen
 import ai.pleosapp.drive.ui.driving.DrivingScreen
 import ai.pleosapp.drive.ui.guidance.StartGuidanceScreen
 import ai.pleosapp.drive.ui.length.CourseLengthScreen
+import ai.pleosapp.drive.ui.preview.CoursePreviewScreen
 import ai.pleosapp.drive.ui.region.RegionScreen
 import ai.pleosapp.drive.ui.result.ResultScreen
 import ai.pleosapp.drive.ui.state.DemoFlowViewModel
@@ -34,6 +35,7 @@ fun DemoApp(vm: DemoFlowViewModel) {
 
     // 시스템 뒤로가기 = 화면의 이전/취소 버튼과 같은 동작
     when (s.step) {
+        DemoStep.PREVIEW -> BackHandler(onBack = a::onPreviewBack)
         DemoStep.LENGTH -> BackHandler(onBack = a::onLengthBack)
         DemoStep.CONFIRM -> BackHandler(onBack = a::onCancel)
         DemoStep.APPROACH -> BackHandler(onBack = a::onCancelGuidance)
@@ -44,6 +46,7 @@ fun DemoApp(vm: DemoFlowViewModel) {
     PleosTheme {
         when (s.step) {
             DemoStep.REGION -> RegionScreen(s.region, s.courses, a, a)
+            DemoStep.PREVIEW -> CoursePreviewScreen(s.preview, a)
             DemoStep.LENGTH -> CourseLengthScreen(s.length, a)
             DemoStep.CONFIRM -> ConfirmScreen(s.confirm, a)
             DemoStep.APPROACH -> StartGuidanceScreen(s.approach, s.driving.courseShape, a)

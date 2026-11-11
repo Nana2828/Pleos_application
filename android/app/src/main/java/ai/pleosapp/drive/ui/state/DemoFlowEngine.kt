@@ -29,10 +29,13 @@ enum class DemoStep {
     /** 1·2. 지역 입력 + 코스 선택 (한 화면) */
     REGION,
 
-    /** 2-1. 코스 길이 선택 */
+    /** 2-2. 코스 미리보기 + "안내 시작" (PLEOS-62) */
+    PREVIEW,
+
+    /** 2-1. 코스 길이 선택. PLEOS-62부터 시연 흐름에서 빠졌다(짧은 코스가 생기면 다시 연결) */
     LENGTH,
 
-    /** 3. 선택 확인 */
+    /** 3. 선택 확인. PLEOS-62부터 시연 흐름에서 빠졌다(미리보기가 대신함) */
     CONFIRM,
 
     /** 4. 시작점까지 안내 */
@@ -54,7 +57,7 @@ data class DemoInfo(
     val playing: Boolean = false,
     /** 재생 파일 안 현재 시각(초) */
     val scriptSec: Long = 0,
-    /** 재생 파일 전체 길이(초) */
+    /** 재생 파일 전체 길이(초). 코스를 고르기 전에는 0 */
     val scriptTotalSec: Long = 0,
     /** 코스 진행률 0~1 (진입 전 0) */
     val courseProgress: Double = 0.0,
@@ -69,6 +72,7 @@ data class DemoFlowState(
     val step: DemoStep = DemoStep.REGION,
     val region: RegionUiState = RegionUiState(),
     val courses: CoursesUiState = CoursesUiState(),
+    val preview: PreviewUiState = PreviewUiState(),
     val length: CourseLengthUiState = CourseLengthUiState(),
     val confirm: ConfirmUiState = ConfirmUiState(),
     val approach: ApproachUiState = ApproachUiState(),
@@ -79,10 +83,15 @@ data class DemoFlowState(
 
 /** 시연 설정. 💡 값은 발표 리허설 후 조정 */
 data class DemoConfig(
-    /** 시작점 안내 구간 배속. 약 7분 → 약 14초 */
-    val approachSpeed: Double = 30.0,
-    /** 코스 주행 배속. 약 91분 → 약 1분 */
-    val drivingSpeed: Double = 90.0,
+    /**
+     * 시작점 안내 구간을 몇 초 동안 보여 줄지. 코스마다 가산에서 시작점까지 거리가 달라서(15~48km)
+     * 배속을 코스마다 이 시간에 맞춰 계산한다.
+     */
+    val approachSeconds: Double = 20.0,
+    /** 코스 주행을 몇 초 동안 보여 줄지. 배속은 코스마다 계산 (고양이 약 91분 → 약 1분) */
+    val drivingSeconds: Double = 60.0,
+    /** 배속 하한. 아주 짧은 구간이 너무 느리게 재생되지 않게 */
+    val minSpeed: Double = 10.0,
     /** 결과 QR에 넣을 주소. ⬜ 시연용 폰 웹 주소가 정해지면 바꾼다 */
     val resultUrl: String = "https://pleos-demo.example/r/demo-001",
     val appVersion: String = "0.1.0-demo",
@@ -94,23 +103,28 @@ data class DemoConfig(
     val nearFinishProgress: Double = 0.95,
 )
 
+/** 진짜 시연 코스 하나의 재생 데이터 (assets/demo/<코스 id>.route.json, .drive.jsonl) */
+class DemoCourseData(val route: DemoRoute, val replay: ReplayScript)
+
 /**
- * 1차 제출 목업 시연의 흐름. 정해진 선택지(경기도/부천 → A 고양이 → 긴 코스)를 고르면
- * 가짜 주행(assets/demo/demo-drive.jsonl)을 배속 재생하며 시작점 안내 → 코스 진입 시 기록 → 완주 시 결과로 간다.
+ * 1차 제출 목업 시연의 흐름 (PLEOS-60, PLEOS-62).
+ * 지역(부천·화성·동두천·양주·경기도)을 입력해 진짜 코스를 고르면 미리보기를 보여 주고, "안내 시작"을 누르면
+ * 그 코스의 가짜 주행(assets/demo/<코스 id>.drive.jsonl)을 배속 재생하며 시작점 안내 → 코스 진입 시 기록 → 완주 시 결과로 간다.
  *
  * - Android에 의존하지 않는다. 시간은 [tick]으로 받는다(실제로 흐른 ms). ViewModel이 타이머로 부른다.
  * - 진입·완주 판정은 주행 코어(`CourseTracker`), 회전 안내는 OSRM 미리 받은 경로(`GuidanceTracker`)를 쓴다.
  * - 결과는 접근 구간을 뺀 코스 구간만 계산한다.
  * - 시계: 안내를 시작한 순간의 [wallClock]을 재생 파일 0초에 맞춘다. 그래서 결과의 시작·끝 시각과 도착 예정 시각이
  *   실제 주행처럼 보인다(91분 코스면 91분 차이).
+ *
+ * @param data 진짜 코스 id → 재생 데이터. 여기 없는 코스는 미리보기에서 안내를 시작할 수 없다.
  */
 class DemoFlowEngine(
     private val repository: DemoCourseRepository,
-    private val route: DemoRoute,
-    private val replay: ReplayScript,
+    private val data: Map<String, DemoCourseData>,
     private val config: DemoConfig = DemoConfig(),
     private val wallClock: () -> Long = System::currentTimeMillis,
-) : RegionActions, CoursesActions, CourseLengthActions, ConfirmActions, ApproachActions, DrivingActions, ResultActions {
+) : RegionActions, CoursesActions, PreviewActions, CourseLengthActions, ConfirmActions, ApproachActions, DrivingActions, ResultActions {
 
     var state: DemoFlowState = DemoFlowState()
         private set
@@ -118,25 +132,18 @@ class DemoFlowEngine(
     /** 상태가 바뀔 때마다 부른다. */
     var listener: ((DemoFlowState) -> Unit)? = null
 
-    private val energyType: EnergyType = replay.energyType ?: EnergyType.EV
-    private val demoCourse: PresetCourse = repository.demoCourse
-    private val courseRoad: List<GeoPoint> = route.course.geometry
-    private val approachRoad: List<GeoPoint> = route.approach.geometry
+    /** 미리보기에서 고른 코스. 안내를 시작하면 이 코스로 재생한다. */
+    private class Selected(val course: PresetCourse, val data: DemoCourseData?)
 
+    private var selected: Selected? = null
     private var drive: DriveRun? = null
-    private var regionId: String? = null
     private var boost = 1.0
-
-    init {
-        state = state.copy(demo = state.demo.copy(scriptTotalSec = durationSec(), synthetic = replay.synthetic))
-    }
 
     // ---------- 1·2. 지역 + 코스 ----------
 
     override fun onQueryChange(query: String) {
         val regions = repository.searchRegions(query)
         val first = regions.firstOrNull()
-        regionId = first?.id
         update {
             it.copy(
                 region = it.region.copy(
@@ -154,58 +161,61 @@ class DemoFlowEngine(
 
     override fun onRegionSelected(regionId: String) {
         val region = repository.regions.firstOrNull { it.id == regionId } ?: return
-        this.regionId = region.id
         update { it.copy(courses = coursesFor(region.id, region.name)) }
     }
 
+    /** 진짜 코스면 지도에 그 코스를 띄운다. 더미(준비 중)는 아무 일도 없다. */
     override fun onCoursePreview(courseId: String) {
         val course = state.courses.courses.firstOrNull { it.id == courseId } ?: return
-        update {
-            it.copy(
-                courses = if (course.enabled) {
-                    it.courses.copy(selectedCourseId = courseId, errorMessage = null)
-                } else {
-                    it.courses.copy(errorMessage = NOT_READY)
-                },
-            )
-        }
+        if (!course.enabled) return
+        update { it.copy(courses = it.courses.copy(selectedCourseId = courseId, mapCourse = course, errorMessage = null)) }
     }
 
+    /** 진짜 코스를 누르면 미리보기(안내 시작 버튼)로 간다. 더미(준비 중)는 아무 일도 없다. */
     override fun onCourseChosen(courseId: String) {
-        val course = state.courses.courses.firstOrNull { it.id == courseId } ?: return
-        if (!course.enabled) {
-            update { it.copy(courses = it.courses.copy(errorMessage = NOT_READY)) }
-            return
-        }
-        val presets = repository.lengthOptions(courseId)
-        val options = presets.map { p ->
-            val long = p.length == ai.pleosapp.drive.core.course.CourseLength.LONG
-            CourseLengthOption(
-                id = p.id,
-                title = if (long) "긴 코스" else "짧은 코스",
-                description = when {
-                    !p.enabled -> NOT_READY
-                    long -> "${shortName(p)} 모양을 크게 그려요"
-                    else -> "가볍게 한 바퀴"
-                },
-                course = summary(p),
-                recommended = p.enabled && long,
-            )
-        }
+        val item = state.courses.courses.firstOrNull { it.id == courseId } ?: return
+        if (!item.enabled) return
+        val course = repository.course(courseId) ?: return
+        val courseData = data[courseId]
+        selected = Selected(course, courseData)
+        val route = courseData?.route
         update {
             it.copy(
-                step = DemoStep.LENGTH,
+                step = DemoStep.PREVIEW,
                 courses = it.courses.copy(selectedCourseId = courseId, errorMessage = null),
+                preview = PreviewUiState(
+                    course = item,
+                    courseRoute = route?.course?.geometry?.map { p -> p.toMap() } ?: item.shape,
+                    startPoint = course.start.toMap(),
+                    place = course.place,
+                    distanceToStartKm = route?.approach?.distanceM?.div(1000),
+                    minutesToStart = route?.approach?.durationSec?.let(::ceilMinutes),
+                    canStartGuidance = courseData != null,
+                ),
+                // 미리보기에서 길이 선택을 건너뛰지만, 다른 화면이 같은 값을 쓸 수 있게 채워 둔다
                 length = CourseLengthUiState(
-                    course = course,
-                    options = options,
-                    selectedId = options.lastOrNull { o -> o.course.enabled }?.id,
+                    course = item,
+                    options = listOf(CourseLengthOption(item.id, "긴 코스", "${shortName(course)} 모양을 크게 그려요", item, recommended = true)),
+                    selectedId = item.id,
+                ),
+                confirm = ConfirmUiState(
+                    regionName = it.courses.regionName,
+                    course = item,
+                    canStartGuidance = courseData != null,
+                    errorMessage = if (courseData != null) null else NOT_READY,
                 ),
             )
         }
     }
 
-    // ---------- 2-1. 길이 ----------
+    // ---------- 2-2. 미리보기 ----------
+
+    override fun onPreviewBack() {
+        selected = null
+        update { it.copy(step = DemoStep.REGION) }
+    }
+
+    // ---------- 2-1. 길이 (시연 흐름에서 빠짐) ----------
 
     override fun onLengthSelected(optionId: String) {
         val option = state.length.options.firstOrNull { it.id == optionId } ?: return
@@ -214,49 +224,48 @@ class DemoFlowEngine(
     }
 
     override fun onLengthConfirmed() {
-        val option = state.length.selected ?: return
-        if (!option.course.enabled) return
-        update {
-            it.copy(
-                step = DemoStep.CONFIRM,
-                confirm = ConfirmUiState(
-                    regionName = it.courses.regionName,
-                    course = option.course,
-                    canStartGuidance = option.course.id == demoCourse.id,
-                    errorMessage = if (option.course.id == demoCourse.id) null else NOT_READY,
-                ),
-            )
-        }
+        if (state.length.selected == null || selected == null) return
+        update { it.copy(step = DemoStep.CONFIRM) }
     }
 
-    override fun onLengthBack() = update { it.copy(step = DemoStep.REGION) }
+    override fun onLengthBack() = update { it.copy(step = DemoStep.PREVIEW) }
 
-    // ---------- 3. 확인 ----------
+    // ---------- 3. 확인 (시연 흐름에서 빠짐) ----------
 
-    override fun onCancel() = update { it.copy(step = DemoStep.LENGTH) }
+    override fun onCancel() = update { it.copy(step = DemoStep.PREVIEW) }
 
+    /** 미리보기의 "안내 시작"(또는 확인 창의 "확인"). 고른 코스의 가짜 주행을 처음부터 재생한다. */
     override fun onStartGuidance() {
-        if (!state.confirm.canStartGuidance) return
-        val run = DriveRun(wallAnchorMs = wallClock())
+        val sel = selected ?: return
+        val courseData = sel.data ?: return
+        if (state.step != DemoStep.PREVIEW && state.step != DemoStep.CONFIRM) return
+        val run = DriveRun(sel.course, courseData, wallAnchorMs = wallClock())
         drive = run
-        val summary = summary(demoCourse)
-        val approachTotal = route.approach
+        val summary = summary(sel.course)
+        val approach = courseData.route.approach
         update {
             it.copy(
                 step = DemoStep.APPROACH,
                 approach = ApproachUiState(
                     course = summary,
-                    startPoint = demoCourse.start.toMap(),
-                    currentPosition = approachRoad.firstOrNull()?.toMap(),
-                    distanceToStartKm = approachTotal.distanceM / 1000,
-                    minutesToStart = ceilMinutes(approachTotal.durationSec),
+                    startPoint = sel.course.start.toMap(),
+                    currentPosition = run.approachRoad.firstOrNull()?.toMap(),
+                    distanceToStartKm = approach.distanceM / 1000,
+                    minutesToStart = ceilMinutes(approach.durationSec),
                     guidance = GuidanceStatus.GUIDING,
                     showRecordingHint = true,
-                    routeToStart = approachRoad.map { p -> p.toMap() },
+                    routeToStart = run.approachRoad.map { p -> p.toMap() },
                 ),
-                driving = DrivingUiState(courseName = summary.name, courseShape = courseRoad.map { p -> p.toMap() }),
+                driving = DrivingUiState(courseName = summary.name, courseShape = run.courseRoad.map { p -> p.toMap() }),
                 result = ResultUiState(),
-                demo = it.demo.copy(playing = true, driveResultJson = null, courseProgress = 0.0),
+                demo = it.demo.copy(
+                    playing = true,
+                    driveResultJson = null,
+                    courseProgress = 0.0,
+                    scriptSec = 0,
+                    scriptTotalSec = durationSec(courseData.replay),
+                    synthetic = courseData.replay.synthetic,
+                ),
             )
         }
         applySpeed()
@@ -266,9 +275,10 @@ class DemoFlowEngine(
 
     override fun onDismissRecordingHint() = update { it.copy(approach = it.approach.copy(showRecordingHint = false)) }
 
+    /** 안내를 그만두면 미리보기로 돌아간다(다시 "안내 시작" 가능). */
     override fun onCancelGuidance() {
         drive = null
-        update { it.copy(step = DemoStep.CONFIRM, demo = it.demo.copy(playing = false)) }
+        update { it.copy(step = if (selected != null) DemoStep.PREVIEW else DemoStep.REGION, demo = it.demo.copy(playing = false)) }
     }
 
     // ---------- 5. 주행 ----------
@@ -336,22 +346,36 @@ class DemoFlowEngine(
     /** 처음(지역 입력)으로 */
     fun restart() {
         drive = null
-        regionId = null
+        selected = null
         boost = 1.0
-        state = DemoFlowState(demo = DemoInfo(scriptTotalSec = durationSec(), synthetic = replay.synthetic))
+        state = DemoFlowState()
         listener?.invoke(state)
     }
 
     // ---------- 신호 처리 ----------
 
     /** 주행 한 번에 필요한 것들. 처음부터 하면 새로 만든다. */
-    private inner class DriveRun(val wallAnchorMs: Long) {
+    private inner class DriveRun(val course: PresetCourse, courseData: DemoCourseData, val wallAnchorMs: Long) {
+        val replay: ReplayScript = courseData.replay
+        val energyType: EnergyType = replay.energyType ?: EnergyType.EV
+        val courseRoad: List<GeoPoint> = courseData.route.course.geometry
+        val approachRoad: List<GeoPoint> = courseData.route.approach.geometry
         val player = ReplayPlayer(replay.signals)
         val session = DriveSession(DriveOrigin(DriveOrigin.Kind.REPLAY, replay.name, replay.synthetic))
-        val tracker = CourseTracker(demoCourse.toCourse(trackShape = courseRoad))
-        val approachGuide = GuidanceTracker(route.approach)
-        val courseGuide = GuidanceTracker(route.course)
+        val tracker = CourseTracker(course.toCourse(trackShape = courseRoad))
+        val approachGuide = GuidanceTracker(courseData.route.approach)
+        val courseGuide = GuidanceTracker(courseData.route.course)
         val scriptAnchorMs = player.startMs
+
+        /** 단계별 배속. 코스마다 접근·코스 길이가 달라 [DemoConfig]의 목표 시간에 맞춘다 */
+        val approachSpeed: Double
+        val drivingSpeed: Double
+
+        init {
+            val (approachMs, courseMs) = splitScript(replay, course.start)
+            approachSpeed = maxOf(config.minSpeed, approachMs / 1000.0 / config.approachSeconds)
+            drivingSpeed = maxOf(config.minSpeed, courseMs / 1000.0 / config.drivingSeconds)
+        }
 
         var position: GeoPoint? = null
         var speedKph: Double? = null
@@ -431,33 +455,34 @@ class DemoFlowEngine(
 
     private fun finishCourse(run: DriveRun, timeMs: Long) {
         run.finished = true
+        val course = run.course
         val start = run.enteredAtMs ?: timeMs
         val distanceKm = (run.session.liveDistanceM - run.enteredDistanceM) / 1000
-        val efficiency = Efficiency.between(run.enteredSnapshot, run.latest, electric = energyType == EnergyType.EV)
+        val efficiency = Efficiency.between(run.enteredSnapshot, run.latest, electric = run.energyType == EnergyType.EV)
         val result = DriveResult(
-            courseId = demoCourse.id,
+            courseId = course.id,
             startedAt = Instant.ofEpochMilli(run.wallAt(start)).atOffset(DriveResult.KST),
             endedAt = Instant.ofEpochMilli(run.wallAt(timeMs)).atOffset(DriveResult.KST),
             durationSec = (timeMs - start) / 1000,
             movingSec = run.courseMovingMs / 1000,
             distanceKm = distanceKm,
-            energyType = energyType,
-            avgFuelEconomy = if (energyType == EnergyType.FUEL) efficiency?.value else null,
-            avgEvEfficiency = if (energyType == EnergyType.EV) efficiency?.value else null,
+            energyType = run.energyType,
+            avgFuelEconomy = if (run.energyType == EnergyType.FUEL) efficiency?.value else null,
+            avgEvEfficiency = if (run.energyType == EnergyType.EV) efficiency?.value else null,
             fuelEconomySource = efficiency?.let { Efficiency.Source.ESTIMATED },
             maxKph = run.courseMaxKph,
             onCourseRatio = run.tracker.onCourseRatio,
             polyline = thin(run.coursePath, DriveResult.POLYLINE_SPACING_M),
             recordSource = DriveOrigin.Kind.REPLAY,
-            synthetic = replay.synthetic,
+            synthetic = run.replay.synthetic,
             appVersion = config.appVersion,
         )
         val json = ContractCodec.encodeDriveResult(result, prettyPrint = true)
         state = state.copy(
             step = DemoStep.RESULT,
             result = ResultUiState(
-                courseName = demoCourse.name,
-                regionName = demoCourse.place,
+                courseName = course.name,
+                regionName = course.place,
                 distanceKm = distanceKm,
                 durationSec = result.durationSec,
                 efficiency = efficiency?.let {
@@ -470,7 +495,7 @@ class DemoFlowEngine(
                 startedAtEpochMs = run.wallAt(start),
                 endedAtEpochMs = run.wallAt(timeMs),
                 drivenPath = run.drawnMap + listOfNotNull(run.position?.toMap()),
-                courseShape = courseRoad.map { it.toMap() },
+                courseShape = run.courseRoad.map { it.toMap() },
                 // 시연: 서버로 보내지 않고 성공 처리, QR은 고정 주소
                 resultUrl = config.resultUrl,
                 upload = UploadStatus.DONE,
@@ -530,7 +555,11 @@ class DemoFlowEngine(
 
     private fun applySpeed(notify: Boolean = true) {
         val run = drive
-        val base = if (state.step == DemoStep.DRIVING) config.drivingSpeed else config.approachSpeed
+        val base = when {
+            run == null -> 1.0
+            state.step == DemoStep.DRIVING -> run.drivingSpeed
+            else -> run.approachSpeed
+        }
         val speed = base * boost
         run?.player?.speed = speed
         state = state.copy(demo = state.demo.copy(speed = speed, boost = boost))
@@ -547,7 +576,13 @@ class DemoFlowEngine(
     private fun coursesFor(regionId: String?, regionName: String?): CoursesUiState {
         if (regionId == null) return CoursesUiState()
         val list = repository.coursesIn(regionId).map(::summary)
-        return CoursesUiState(regionName = regionName.orEmpty(), courses = list, selectedCourseId = null)
+        val featured = repository.featuredCourse(regionId)?.id
+        return CoursesUiState(
+            regionName = regionName.orEmpty(),
+            courses = list,
+            selectedCourseId = null,
+            mapCourse = list.firstOrNull { it.id == featured },
+        )
     }
 
     private fun summary(p: PresetCourse) = CourseSummary(
@@ -558,9 +593,11 @@ class DemoFlowEngine(
         estimatedMinutes = p.durationMin,
         shape = p.preview.map { it.toMap() },
         enabled = p.enabled,
+        title = p.name,
+        area = p.area,
     )
 
-    /** "부천·인천 고양이 코스" → "고양이" */
+    /** "부천·인천 고양이 코스" → "고양이", "양주·의정부 꼬리 세운 강아지 코스" → "강아지" */
     private fun shortName(p: PresetCourse): String =
         p.name.removeSuffix(" 코스").substringAfterLast(' ').ifBlank { p.name }
 
@@ -576,14 +613,26 @@ class DemoFlowEngine(
         return TurnInfo(direction = dir, distanceM = distance.roundToInt().coerceAtLeast(0), text = m.text, roadName = m.roadName)
     }
 
-    private fun durationSec(): Long = (replay.signals.lastOrNull()?.timeMs ?: 0L) / 1000
-
     private companion object {
         const val NOT_READY = "준비 중인 코스예요"
         const val MOVING_KPH = 3.0
 
+        /** 이 거리 안에 처음 들어온 위치를 코스 시작으로 본다(배속 계산용 어림값) */
+        const val START_NEAR_M = 60.0
+
         fun GeoPoint.toMap() = MapPoint(lat, lon)
 
         fun ceilMinutes(sec: Long): Int = ceil(sec / 60.0).toInt()
+
+        fun durationSec(replay: ReplayScript): Long = (replay.signals.lastOrNull()?.timeMs ?: 0L) / 1000
+
+        /** 재생 파일을 접근 구간과 코스 구간 시간(ms)으로 나눈다. 시작점 근처에 처음 온 시각이 경계 */
+        fun splitScript(replay: ReplayScript, start: GeoPoint): Pair<Long, Long> {
+            val first = replay.signals.firstOrNull()?.timeMs ?: 0L
+            val last = replay.signals.lastOrNull()?.timeMs ?: 0L
+            val atStart = replay.signals.firstOrNull { it is DriveSignal.Position && distanceM(it.point, start) <= START_NEAR_M }?.timeMs
+                ?: (first + (last - first) / 3)
+            return (atStart - first) to (last - atStart)
+        }
     }
 }

@@ -26,8 +26,12 @@ data class CourseSummary(
     val estimatedMinutes: Int,
     /** 코스 모양 좌표. 미리보기와 지도 경로선에 쓴다. */
     val shape: List<MapPoint>,
-    /** 고를 수 있으면 true. 시연의 더미(준비 중) 코스는 false → 화면은 흐리게 그리고 눌러도 넘어가지 않는다. */
+    /** 고를 수 있으면 true. 시연의 더미(준비 중) 코스는 false → 화면은 흐리게 그리고 눌러도 아무 일도 없다. */
     val enabled: Boolean = true,
+    /** 코스 전체 이름. 예: "부천·인천 고양이 코스". 모르면 [name]과 같다 */
+    val title: String = name,
+    /** 지나는 지역 설명. 예: "부천 소사구·오정구, 인천 남동구·부평구" */
+    val area: String = "",
 )
 
 /** 효율(연비·전비) 단위. 에뮬레이터 차는 전기차라 KM_PER_KWH가 나온다. */

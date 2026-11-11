@@ -107,7 +107,9 @@ private fun StepPanel(s: DemoFlowState, a: DemoFlowActions) {
             Text("입력: \"${s.region.query}\"")
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(onClick = { a.onQueryChange("경기도") }) { Text("\"경기도\" 입력") }
-                OutlinedButton(onClick = { a.onQueryChange("부천") }) { Text("\"부천\" 입력") }
+                listOf("부천", "화성", "동두천").forEach { q ->
+                    OutlinedButton(onClick = { a.onQueryChange(q) }) { Text("\"$q\" 입력") }
+                }
                 OutlinedButton(onClick = a::onClearQuery) { Text("지우기") }
             }
             s.courses.errorMessage?.let { Text(it, color = Color(0xFFD32F2F)) }
@@ -118,6 +120,16 @@ private fun StepPanel(s: DemoFlowState, a: DemoFlowActions) {
                     OutlinedButton(onClick = { a.onCoursePreview(c.id) }) { Text("미리보기") }
                     FilledTonalButton(onClick = { a.onCourseChosen(c.id) }, enabled = c.enabled) { Text(label) }
                 }
+            }
+        }
+        DemoStep.PREVIEW -> {
+            val p = s.preview
+            Title("2-2. ${p.course?.label} ${p.course?.title} 미리보기")
+            Text("${p.course?.distanceKm?.let { "%.1f".format(it) }}km · 약 ${p.course?.estimatedMinutes}분 · ${p.place}")
+            Text("시작점까지 ${p.distanceToStartKm?.let { "%.1f".format(it) } ?: "-"}km · 약 ${p.minutesToStart ?: "-"}분")
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(onClick = a::onPreviewBack) { Text("이전") }
+                Button(onClick = a::onStartGuidance, enabled = p.canStartGuidance) { Text("안내 시작") }
             }
         }
         DemoStep.LENGTH -> {
@@ -190,9 +202,10 @@ private fun StepPanel(s: DemoFlowState, a: DemoFlowActions) {
 private fun RoutePreview(s: DemoFlowState, modifier: Modifier) {
     val (course, approach, driven, current, start) = when (s.step) {
         DemoStep.REGION -> {
-            val c = s.courses.selectedCourse ?: s.courses.courses.firstOrNull()
+            val c = s.courses.mapCourse ?: s.courses.selectedCourse ?: s.courses.courses.firstOrNull()
             Lines(c?.shape.orEmpty(), emptyList(), emptyList(), null, c?.shape?.firstOrNull())
         }
+        DemoStep.PREVIEW -> Lines(s.preview.courseRoute, emptyList(), emptyList(), null, s.preview.startPoint)
         DemoStep.LENGTH -> Lines(s.length.selected?.course?.shape.orEmpty(), emptyList(), emptyList(), null, null)
         DemoStep.CONFIRM -> Lines(s.confirm.course?.shape.orEmpty(), emptyList(), emptyList(), null, null)
         DemoStep.APPROACH -> Lines(s.driving.courseShape, s.approach.routeToStart, emptyList(), s.approach.currentPosition, s.approach.startPoint)

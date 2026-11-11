@@ -75,6 +75,17 @@ object FakeUiStates {
         selectedCourseId = heartCourse.id,
     )
 
+    // 2-2. 코스 미리보기 + 안내 시작 (PLEOS-62)
+    val preview = PreviewUiState(
+        course = heartCourse.copy(title = "화성 국도·고속도로 하트 코스", area = "경기 남부 (화성·오산·평택 일대)"),
+        courseRoute = heartShape,
+        startPoint = heartShape.first(),
+        place = "화성시",
+        distanceToStartKm = 45.3,
+        minutesToStart = 35,
+        canStartGuidance = true,
+    )
+
     // 3. 선택 확인
     val confirm = ConfirmUiState(
         regionName = "수원",

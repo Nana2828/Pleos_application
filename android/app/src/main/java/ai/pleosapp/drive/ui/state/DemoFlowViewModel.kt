@@ -1,5 +1,6 @@
 package ai.pleosapp.drive.ui.state
 
+import ai.pleosapp.drive.core.course.DemoCourseFiles
 import ai.pleosapp.drive.core.course.DemoCourseRepository
 import ai.pleosapp.drive.core.drive.ContractCodec
 import ai.pleosapp.drive.core.navi.DemoRouteCodec
@@ -45,6 +46,7 @@ class DemoFlowViewModel(app: Application) : AndroidViewModel(app) {
         override fun onRegionSelected(regionId: String) = run { it.onRegionSelected(regionId) }
         override fun onCoursePreview(courseId: String) = run { it.onCoursePreview(courseId) }
         override fun onCourseChosen(courseId: String) = run { it.onCourseChosen(courseId) }
+        override fun onPreviewBack() = run { it.onPreviewBack() }
         override fun onLengthSelected(optionId: String) = run { it.onLengthSelected(optionId) }
         override fun onLengthConfirmed() = run { it.onLengthConfirmed() }
         override fun onLengthBack() = run { it.onLengthBack() }
@@ -108,12 +110,17 @@ class DemoFlowViewModel(app: Application) : AndroidViewModel(app) {
         resumeOnForeground = false
     }
 
+    /** 진짜 코스 3개의 코스·경로·가짜 주행을 모두 읽는다 (합쳐 약 3.5MB, 백그라운드에서) */
     private fun load(app: Application): DemoFlowEngine {
         fun asset(name: String) = app.assets.open("demo/$name").bufferedReader(Charsets.UTF_8).use { it.readText() }
-        val repo = DemoCourseRepository(asset(COURSE_FILE))
-        val route = DemoRouteCodec.decode(asset("demo-route.json"))
-        val replay = ContractCodec.decodeReplay(asset("demo-drive.jsonl"))
-        return DemoFlowEngine(repo, route, replay)
+        val repo = DemoCourseRepository(::asset)
+        val data = repo.realCourses.associate { c ->
+            c.id to DemoCourseData(
+                route = DemoRouteCodec.decode(asset(DemoCourseFiles.route(c.id))),
+                replay = ContractCodec.decodeReplay(asset(DemoCourseFiles.drive(c.id))),
+            )
+        }
+        return DemoFlowEngine(repo, data)
     }
 
     /** 재생 중이면 흐른 시간만큼 진행한다. Main 스레드에서만 엔진을 만진다. */
@@ -131,7 +138,6 @@ class DemoFlowViewModel(app: Application) : AndroidViewModel(app) {
 
     private companion object {
         const val TAG = "DemoFlow"
-        const val COURSE_FILE = "bucheon-cat-91min.json"
         const val TICK_MS = 50L
         /** 느린 에뮬레이터에서 틱이 늦어도 흐른 시간을 버리지 않게 넉넉히. 백그라운드는 onAppBackground가 멈춘다 */
         const val MAX_STEP_MS = 1_000L
@@ -140,7 +146,7 @@ class DemoFlowViewModel(app: Application) : AndroidViewModel(app) {
 
 /** 화면 버튼 전부 + 시연 조작. E 화면은 필요한 함수만 부르면 된다. */
 interface DemoFlowActions :
-    RegionActions, CoursesActions, CourseLengthActions, ConfirmActions, ApproachActions, DrivingActions, ResultActions {
+    RegionActions, CoursesActions, PreviewActions, CourseLengthActions, ConfirmActions, ApproachActions, DrivingActions, ResultActions {
     fun setPlaying(playing: Boolean)
     fun setBoost(value: Double)
     fun skipToCourseStart()

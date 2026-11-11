@@ -35,7 +35,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -47,11 +46,13 @@ import kotlin.math.roundToInt
 /**
  * 지역 입력 + 코스 선택 화면 (PLEOS-42·43, 시안 1번과 2번을 합침).
  *
- * "경기도"를 입력하면 아래에 추천 코스가 바로 나오고, 코스를 누르면 길이 선택으로 넘어가요.
- * 미리보기를 보던 코스가 있으면(되돌아왔을 때) 오른쪽에 모양이 떠요.
+ * 지역을 입력하면 아래에 추천 코스가 바로 나와요 (PLEOS-62).
+ * - 시 이름(부천·화성·동두천·양주): 그 지역의 진짜 코스 1개 + 준비 중 코스 2개. 진짜 코스는 오른쪽 지도에 크게 떠요.
+ * - "경기도": 진짜 코스 3개.
+ * 진짜 코스를 누르면 코스 미리보기(안내 시작)로 넘어가요.
  *
  * 값은 D 의 [RegionUiState]·[CoursesUiState] 로만 받고, 사용자 동작은 [RegionActions]·[CoursesActions] 로만 알려요.
- * 준비 중인 코스([CourseSummary.enabled] = false)는 흐리게 보이고, 누르면 안내 문구가 나와요.
+ * 준비 중인 코스([CourseSummary.enabled] = false)는 흐리게 보이고, 눌러도 아무 일도 없어요.
  * 주행 전 정차 상태에서만 쓰는 화면이라 터치 입력을 써요.
  */
 @Composable
@@ -62,11 +63,22 @@ fun RegionScreen(
     coursesActions: CoursesActions,
     modifier: Modifier = Modifier,
 ) {
-    val selected = courses.selectedCourse
+    val mapCourse = courses.mapCourse
     Row(modifier = modifier.fillMaxSize().background(PleosColors.Rail)) {
         SideRail()
         Box(modifier = Modifier.weight(1f).fillMaxSize()) {
             MapPlaceholder()
+            if (mapCourse != null) {
+                // 목록 오른쪽에 그 지역의 진짜 코스를 크게 (PLEOS-62)
+                Box(Modifier.fillMaxSize().padding(start = MAP_START, top = 72.dp, end = 24.dp, bottom = 24.dp)) {
+                    val scene = rememberMapScene(mapCourse.shape)
+                    MapRouteView(scene.unit(mapCourse.shape), Modifier.fillMaxSize(), strokeWidth = 9.dp, showStart = true)
+                    InfoChip(
+                        "${mapCourse.label} ${mapCourse.title} · ${mapCourse.distanceKm.roundToInt()}km",
+                        Modifier.align(Alignment.BottomCenter).padding(bottom = 16.dp),
+                    )
+                }
+            }
             Column(modifier = Modifier.padding(start = 32.dp, top = 24.dp).width(560.dp)) {
                 InfoChip(if (courses.courses.isEmpty()) "어디로 가시겠어요?" else "${region.query.trim()} 드라이브 코스")
                 Spacer(Modifier.height(16.dp))
@@ -79,9 +91,6 @@ fun RegionScreen(
                         InfoChip(it)
                     }
                 }
-            }
-            if (selected != null) {
-                CoursePreview(selected, Modifier.align(Alignment.CenterEnd).padding(end = 24.dp, top = 80.dp))
             }
             if (courses.courses.isEmpty()) {
                 Text(
@@ -167,7 +176,8 @@ private fun CourseRow(item: CourseSummary, selected: Boolean, onSelect: (String)
                 else Modifier,
             )
             .alpha(if (item.enabled) 1f else 0.45f)
-            .clickable { onSelect(item.id) }
+            // 준비 중 코스는 눌러도 아무 일도 없게 (PLEOS-62)
+            .then(if (item.enabled) Modifier.clickable { onSelect(item.id) } else Modifier)
             .padding(horizontal = 12.dp),
     ) {
         val scene = rememberMapScene(item.shape)
@@ -188,33 +198,8 @@ private fun CourseRow(item: CourseSummary, selected: Boolean, onSelect: (String)
     }
 }
 
-@Composable
-private fun CoursePreview(course: CourseSummary, modifier: Modifier = Modifier) {
-    Box(
-        modifier
-            .size(width = 700.dp, height = 640.dp)
-            .shadow(16.dp, RoundedCornerShape(28.dp))
-            .clip(RoundedCornerShape(28.dp))
-            .border(4.dp, Color.White, RoundedCornerShape(28.dp)),
-    ) {
-        val scene = rememberMapScene(course.shape)
-        MapRouteView(scene.unit(course.shape), Modifier.fillMaxSize(), strokeWidth = 9.dp, showStart = true)
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(20.dp)
-                .background(PleosColors.Rail, RoundedCornerShape(18.dp))
-                .padding(horizontal = 24.dp, vertical = 14.dp),
-        ) {
-            Text(
-                text = "${course.label} ${course.name} 미리보기 · 지도 위 ${course.name.removeSuffix(" 코스")} 모양",
-                color = PleosColors.TextPrimary,
-                fontSize = 26.sp,
-            )
-        }
-    }
-}
+/** 지도(진짜 코스)를 그리기 시작하는 왼쪽 여백. 입력창·목록(32 + 560dp) 오른쪽 */
+private val MAP_START = 620.dp
 
 // ---- 미리보기 (D 의 가짜 값 FakeUiStates) ----
 
@@ -229,11 +214,15 @@ private fun RegionScreenPreview() {
     }
 }
 
-@Preview(widthDp = 1280, heightDp = 800, name = "경기도 입력 - 하트 선택")
+@Preview(widthDp = 1280, heightDp = 800, name = "부천 입력 - 진짜 코스를 지도에")
 @Composable
 private fun RegionScreenSelectedPreview() {
+    val courses = FakeUiStates.courses
     PleosTheme {
-        RegionScreen(FakeUiStates.region.copy(query = "경기도"), FakeUiStates.courses, RegionActions.Noop, CoursesActions.Noop)
+        RegionScreen(
+            FakeUiStates.region.copy(query = "부천"), courses.copy(mapCourse = courses.courses.firstOrNull()),
+            RegionActions.Noop, CoursesActions.Noop,
+        )
     }
 }
 

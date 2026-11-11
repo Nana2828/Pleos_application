@@ -8,8 +8,9 @@ val s by vm.state.collectAsStateWithLifecycle()
 val a = vm.actions
 when (s.step) {
     DemoStep.REGION -> ...   // 지역 입력 + 코스 선택 (한 화면)
-    DemoStep.LENGTH -> ...   // 코스 길이 선택
-    DemoStep.CONFIRM -> ...  // 선택 확인
+    DemoStep.PREVIEW -> ...  // 코스 미리보기 + 안내 시작 (PLEOS-62)
+    DemoStep.LENGTH -> ...   // 코스 길이 선택 (PLEOS-62부터 흐름에서 빠짐)
+    DemoStep.CONFIRM -> ...  // 선택 확인 (PLEOS-62부터 흐름에서 빠짐)
     DemoStep.APPROACH -> ... // 시작점까지 안내
     DemoStep.DRIVING -> ...  // 주행 기록 중
     DemoStep.RESULT -> ...   // 도착 결과 + QR
@@ -23,9 +24,10 @@ when (s.step) {
 | E 화면 인자 | 넘길 값 |
 |---|---|
 | **RegionScreen** query | `s.region.query` → 입력은 `a.onQueryChange(it)`, 지우기 `a.onClearQuery()` |
-| 코스 목록 | `s.courses.courses` (`label`, `name`, `distanceKm`, `estimatedMinutes`, `shape`, **`enabled`**) |
-| 선택(미리보기) | `s.courses.selectedCourseId` → 누르면 `a.onCoursePreview(id)` |
-| 코스 고르기 | `a.onCourseChosen(id)`. `enabled = false`(준비 중)면 넘어가지 않고 `s.courses.errorMessage`에 "준비 중인 코스예요" |
+| 코스 목록 | `s.courses.courses` (`label`, `name`, `title`, `area`, `distanceKm`, `estimatedMinutes`, `shape`, **`enabled`**). 시 이름(부천·화성·동두천·양주)은 진짜 1개 + 준비 중 2개, "경기도"는 진짜 3개 |
+| 지도에 크게 | `s.courses.mapCourse` — 시 이름을 입력하면 그 지역의 진짜 코스, "경기도"면 null |
+| 코스 고르기 | `a.onCourseChosen(id)` → 진짜 코스면 `PREVIEW`로. `enabled = false`(준비 중)면 **아무 일도 없다** |
+| **CoursePreviewScreen** | `s.preview` (`course`, `courseRoute`(도로 경로), `startPoint`, `place`, `distanceToStartKm`, `minutesToStart`, `canStartGuidance`). 안내 시작 `a.onStartGuidance()`, 이전 `a.onPreviewBack()` |
 | **CourseLengthScreen** courseTitle | `"${s.length.course?.label} ${s.length.course?.name}"` |
 | options | `s.length.options` (`title`, `description`, `course.distanceKm`, `course.estimatedMinutes`, `recommended`, `course.shape`, `course.enabled`) |
 | selectedId / 고르기 / 확인 / 이전 | `s.length.selectedId` / `a.onLengthSelected(id)` / `a.onLengthConfirmed()` / `a.onLengthBack()` |

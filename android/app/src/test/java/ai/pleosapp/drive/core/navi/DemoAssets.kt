@@ -13,7 +13,7 @@ object DemoAssets {
     val dir: File by lazy {
         var base: File? = File(System.getProperty("user.dir")).absoluteFile
         while (base != null) {
-            candidates.map { File(base, it) }.firstOrNull { File(it, "demo-route.json").isFile }?.let { return@lazy it }
+            candidates.map { File(base, it) }.firstOrNull { File(it, "bucheon-cat-91min.route.json").isFile }?.let { return@lazy it }
             base = base.parentFile
         }
         error("시연 assets 폴더(app/src/main/assets/demo)를 찾지 못했습니다. user.dir=${System.getProperty("user.dir")}")

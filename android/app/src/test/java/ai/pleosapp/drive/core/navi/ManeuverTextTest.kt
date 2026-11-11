@@ -55,7 +55,7 @@ class ManeuverTextTest {
     }
 
     @Test fun everyStepInRealAssetIsHandled() {
-        val route = DemoRouteCodec.decode(DemoAssets.text("demo-route.json"))
+        val route = DemoRouteCodec.decode(DemoAssets.text("bucheon-cat-91min.route.json"))
         for (section in listOf(route.approach, route.course)) {
             val announced = section.steps.mapNotNull(ManeuverText::of)
             // 출발 안내는 빠지고 도착은 남는다

@@ -9,6 +9,11 @@ data class CoursesUiState(
     val selectedCourseId: String? = null,
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
+    /**
+     * 지도에 크게 보여 줄 그 지역의 진짜 코스 (PLEOS-62). 시 이름(부천·화성·동두천)을 입력하면 채워지고,
+     * 여러 코스가 나오는 "경기도"에서는 null.
+     */
+    val mapCourse: CourseSummary? = null,
 ) {
     /** 지도 미리보기에 그릴 코스 */
     val selectedCourse: CourseSummary?
