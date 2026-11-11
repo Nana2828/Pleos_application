@@ -4,6 +4,7 @@ import ai.pleosapp.drive.core.course.DemoCourseFiles
 import ai.pleosapp.drive.core.course.DemoCourseRepository
 import ai.pleosapp.drive.core.drive.ContractCodec
 import ai.pleosapp.drive.core.navi.DemoRouteCodec
+import ai.pleosapp.drive.core.navi.DemoStopsCodec
 import android.app.Application
 import android.os.SystemClock
 import android.util.Log
@@ -47,6 +48,7 @@ class DemoFlowViewModel(app: Application) : AndroidViewModel(app) {
         override fun onCoursePreview(courseId: String) = run { it.onCoursePreview(courseId) }
         override fun onCourseChosen(courseId: String) = run { it.onCourseChosen(courseId) }
         override fun onPreviewBack() = run { it.onPreviewBack() }
+        override fun onToggleStop(stopId: String) = run { it.onToggleStop(stopId) }
         override fun onLengthSelected(optionId: String) = run { it.onLengthSelected(optionId) }
         override fun onLengthConfirmed() = run { it.onLengthConfirmed() }
         override fun onLengthBack() = run { it.onLengthBack() }
@@ -55,6 +57,8 @@ class DemoFlowViewModel(app: Application) : AndroidViewModel(app) {
         override fun onDismissRecordingHint() = run { it.onDismissRecordingHint() }
         override fun onCancelGuidance() = run { it.onCancelGuidance() }
         override fun onEndGuidance() = run { it.onEndGuidance() }
+        override fun onSkipStop() = run { it.onSkipStop() }
+        override fun onReturnToCourse() = run { it.onReturnToCourse() }
         override fun onRetryUpload() = run { it.onRetryUpload() }
         override fun onDone() = run { it.onDone() }
 
@@ -114,10 +118,13 @@ class DemoFlowViewModel(app: Application) : AndroidViewModel(app) {
     private fun load(app: Application): DemoFlowEngine {
         fun asset(name: String) = app.assets.open("demo/$name").bufferedReader(Charsets.UTF_8).use { it.readText() }
         val repo = DemoCourseRepository(::asset)
+        val files = app.assets.list("demo").orEmpty().toSet()
         val data = repo.realCourses.associate { c ->
             c.id to DemoCourseData(
                 route = DemoRouteCodec.decode(asset(DemoCourseFiles.route(c.id))),
                 replay = ContractCodec.decodeReplay(asset(DemoCourseFiles.drive(c.id))),
+                // 들를 곳은 있는 코스만 (PLEOS-63: 화성 하트)
+                stops = DemoCourseFiles.stops(c.id).takeIf { it in files }?.let { DemoStopsCodec.decode(asset(it)) }.orEmpty(),
             )
         }
         return DemoFlowEngine(repo, data)

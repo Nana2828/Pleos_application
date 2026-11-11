@@ -16,10 +16,12 @@ import ai.pleosapp.drive.core.drive.ReplayPlayer
 import ai.pleosapp.drive.core.drive.ReplayScript
 import ai.pleosapp.drive.core.drive.distanceM
 import ai.pleosapp.drive.core.drive.thin
+import ai.pleosapp.drive.core.navi.CourseStop
 import ai.pleosapp.drive.core.navi.DemoRoute
 import ai.pleosapp.drive.core.navi.GuidanceSnapshot
 import ai.pleosapp.drive.core.navi.GuidanceTracker
 import ai.pleosapp.drive.core.navi.ManeuverKind
+import ai.pleosapp.drive.core.navi.toSignals
 import java.time.Instant
 import kotlin.math.ceil
 import kotlin.math.roundToInt
@@ -101,10 +103,23 @@ data class DemoConfig(
     val pathSpacingM: Double = 25.0,
     /** "도착 직전으로" 조작이 건너뛸 곳 (코스 진행률) */
     val nearFinishProgress: Double = 0.95,
+    /** 들를 곳 가는 길·돌아오는 길을 각각 몇 초 동안 보여 줄지 (PLEOS-63) */
+    val detourLegSeconds: Double = 10.0,
+    /** 이탈 지점이 이만큼 남으면 "곧 빠집니다"를 보여 준다 (PLEOS-63) */
+    val stopNoticeM: Double = 2_000.0,
+    /** 장소에 머문 시간으로 칠 값. 결과의 시작·끝 시각에만 들어가고 기록 시간에는 안 들어간다 (PLEOS-63) */
+    val stopStayMinutes: Int = 30,
+    /** 코스에 합류한 뒤 "기록 다시 시작"을 보여 줄 실제 시간(ms) (PLEOS-63) */
+    val resumedNoticeMs: Long = 3_000,
+    /** "곧 빠집니다"가 떠 있는 동안 주행 배속을 이만큼 나눈다. 안 그러면 1~2초 만에 지나가 읽을 수 없다 (PLEOS-63) */
+    val noticeSlowdown: Double = 4.0,
 )
 
-/** 진짜 시연 코스 하나의 재생 데이터 (assets/demo/<코스 id>.route.json, .drive.jsonl) */
-class DemoCourseData(val route: DemoRoute, val replay: ReplayScript)
+/**
+ * 진짜 시연 코스 하나의 재생 데이터 (assets/demo/<코스 id>.route.json, .drive.jsonl, .stops.json)
+ * [stops]는 코스 주변 들를 곳(PLEOS-63). 파일이 없는 코스는 빈 목록.
+ */
+class DemoCourseData(val route: DemoRoute, val replay: ReplayScript, val stops: List<CourseStop> = emptyList())
 
 /**
  * 1차 제출 목업 시연의 흐름 (PLEOS-60, PLEOS-62).
@@ -114,6 +129,9 @@ class DemoCourseData(val route: DemoRoute, val replay: ReplayScript)
  * - Android에 의존하지 않는다. 시간은 [tick]으로 받는다(실제로 흐른 ms). ViewModel이 타이머로 부른다.
  * - 진입·완주 판정은 주행 코어(`CourseTracker`), 회전 안내는 OSRM 미리 받은 경로(`GuidanceTracker`)를 쓴다.
  * - 결과는 접근 구간을 뺀 코스 구간만 계산한다.
+ * - 들를 곳(PLEOS-63): 미리보기에서 고른 장소의 이탈 지점에 오면 코스 재생을 그 자리에서 멈추고, 장소 왕복 재생으로 바꾼다.
+ *   왕복 신호는 주행 기록(`DriveSession`)·코스 판정(`CourseTracker`)에 넣지 않는다. 돌아오면 코스 재생을 멈춘 곳부터 이어 가므로
+ *   거리·시간·효율·일치율에 왕복 구간이 들어가지 않고, 결과의 시작·끝 시각에만 왕복 + 머문 시간이 더해진다.
  * - 시계: 안내를 시작한 순간의 [wallClock]을 재생 파일 0초에 맞춘다. 그래서 결과의 시작·끝 시각과 도착 예정 시각이
  *   실제 주행처럼 보인다(91분 코스면 91분 차이).
  *
@@ -191,6 +209,7 @@ class DemoFlowEngine(
                     distanceToStartKm = route?.approach?.distanceM?.div(1000),
                     minutesToStart = route?.approach?.durationSec?.let(::ceilMinutes),
                     canStartGuidance = courseData != null,
+                    stops = courseData?.stops.orEmpty().map(::stopOption),
                 ),
                 // 미리보기에서 길이 선택을 건너뛰지만, 다른 화면이 같은 값을 쓸 수 있게 채워 둔다
                 length = CourseLengthUiState(
@@ -213,6 +232,14 @@ class DemoFlowEngine(
     override fun onPreviewBack() {
         selected = null
         update { it.copy(step = DemoStep.REGION) }
+    }
+
+    override fun onToggleStop(stopId: String) {
+        if (state.step != DemoStep.PREVIEW || state.preview.stops.none { it.id == stopId }) return
+        update {
+            val ids = it.preview.selectedStopIds
+            it.copy(preview = it.preview.copy(selectedStopIds = if (stopId in ids) ids - stopId else ids + stopId))
+        }
     }
 
     // ---------- 2-1. 길이 (시연 흐름에서 빠짐) ----------
@@ -239,7 +266,8 @@ class DemoFlowEngine(
         val sel = selected ?: return
         val courseData = sel.data ?: return
         if (state.step != DemoStep.PREVIEW && state.step != DemoStep.CONFIRM) return
-        val run = DriveRun(sel.course, courseData, wallAnchorMs = wallClock())
+        val stops = courseData.stops.filter { it.id in state.preview.selectedStopIds }
+        val run = DriveRun(sel.course, courseData, wallAnchorMs = wallClock(), stops = stops)
         drive = run
         val summary = summary(sel.course)
         val approach = courseData.route.approach
@@ -256,7 +284,11 @@ class DemoFlowEngine(
                     showRecordingHint = true,
                     routeToStart = run.approachRoad.map { p -> p.toMap() },
                 ),
-                driving = DrivingUiState(courseName = summary.name, courseShape = run.courseRoad.map { p -> p.toMap() }),
+                driving = DrivingUiState(
+                    courseName = summary.name,
+                    courseShape = run.courseRoad.map { p -> p.toMap() },
+                    stopPoints = run.stopPoints,
+                ),
                 result = ResultUiState(),
                 demo = it.demo.copy(
                     playing = true,
@@ -285,6 +317,25 @@ class DemoFlowEngine(
 
     override fun onEndGuidance() = restart()
 
+    /** 이탈 지점이 다가올 때 "지나가기": 이번 장소는 들르지 않는다. */
+    override fun onSkipStop() {
+        val run = drive ?: return
+        if (state.step != DemoStep.DRIVING || run.detour != null) return
+        if (upcomingStop(run) == null) return
+        run.plannedStops.removeFirst()
+        afterSignals()
+    }
+
+    /** 장소에 도착한 뒤 "코스로 돌아가기": 빠졌던 코스 지점까지 돌아오는 안내를 시작한다. */
+    override fun onReturnToCourse() {
+        val run = drive ?: return
+        val d = run.detour ?: return
+        if (d.phase != StopPhase.ARRIVED) return
+        d.startReturn()
+        applySpeed(notify = false)
+        afterSignals()
+    }
+
     // ---------- 6. 결과 ----------
 
     override fun onRetryUpload() = update { it.copy(result = it.result.copy(upload = UploadStatus.DONE, resultUrl = config.resultUrl)) }
@@ -297,9 +348,29 @@ class DemoFlowEngine(
     fun tick(realElapsedMs: Long) {
         val run = drive ?: return
         if (!state.demo.playing) return
-        run.player.advanceBy(realElapsedMs, ::handle)
-        finishIfReplayEnded(run)
+        if (run.resumedNoticeMs > 0) run.resumedNoticeMs -= realElapsedMs
+        val d = run.detour
+        if (d != null) {
+            tickDetour(run, d, realElapsedMs)
+        } else {
+            // 들를 곳 이탈 지점에 닿으면 그 신호에서 멈춘다. 남은 시간은 버린다(한 틱이라 화면에 티 나지 않음).
+            run.player.advanceBy(realElapsedMs, stopAfter = { run.detour != null }, sink = ::handle)
+            finishIfReplayEnded(run)
+        }
         afterSignals()
+    }
+
+    /** 들를 곳 왕복 재생. 가는 길이 끝나면 도착(버튼 대기), 돌아오는 길이 끝나면 코스 기록을 이어 간다. */
+    private fun tickDetour(run: DriveRun, d: Detour, realElapsedMs: Long) {
+        if (d.phase != StopPhase.GOING && d.phase != StopPhase.RETURNING) return
+        d.player.advanceBy(realElapsedMs, sink = ::handleDetour)
+        if (!d.player.isFinished) return
+        if (d.phase == StopPhase.GOING) {
+            d.arrive()
+            run.speedKph = 0.0
+        } else {
+            endDetour(run, d)
+        }
     }
 
     /**
@@ -307,7 +378,7 @@ class DemoFlowEngine(
      * 시연 중 주행 화면에서 멈춰 버리지 않게 하기 위한 안전장치.
      */
     private fun finishIfReplayEnded(run: DriveRun) {
-        if (!run.player.isFinished || run.finished || run.enteredAtMs == null) return
+        if (!run.player.isFinished || run.finished || run.enteredAtMs == null || run.detour != null) return
         finishCourse(run, run.player.positionMs)
     }
 
@@ -335,8 +406,10 @@ class DemoFlowEngine(
     fun skipToNearFinish() {
         val run = drive ?: return
         if (state.step != DemoStep.APPROACH && state.step != DemoStep.DRIVING) return
+        // 들를 곳에 다녀오는 중에는 건너뛰지 않는다. 가는 도중 이탈 지점이 있으면 거기서 멈춘다.
+        if (run.detour != null) return
         run.player.seekUntil(::handle) {
-            state.step == DemoStep.RESULT ||
+            state.step == DemoStep.RESULT || run.detour != null ||
                 (state.step == DemoStep.DRIVING && run.tracker.progressRatio >= config.nearFinishProgress)
         }
         finishIfReplayEnded(run)
@@ -355,7 +428,12 @@ class DemoFlowEngine(
     // ---------- 신호 처리 ----------
 
     /** 주행 한 번에 필요한 것들. 처음부터 하면 새로 만든다. */
-    private inner class DriveRun(val course: PresetCourse, courseData: DemoCourseData, val wallAnchorMs: Long) {
+    private inner class DriveRun(
+        val course: PresetCourse,
+        courseData: DemoCourseData,
+        val wallAnchorMs: Long,
+        stops: List<CourseStop> = emptyList(),
+    ) {
         val replay: ReplayScript = courseData.replay
         val energyType: EnergyType = replay.energyType ?: EnergyType.EV
         val courseRoad: List<GeoPoint> = courseData.route.course.geometry
@@ -398,8 +476,64 @@ class DemoFlowEngine(
                 return field
             }
         var finished = false
+        /** 코스에 들어간 실제(벽시계) 시각. 결과의 시작 시각 */
+        var enteredWallMs = 0L
 
-        fun wallAt(scriptMs: Long): Long = wallAnchorMs + (scriptMs - scriptAnchorMs)
+        // 들를 곳 (PLEOS-63)
+        /** 아직 안 들른 장소. 이탈 지점 순 */
+        val plannedStops = ArrayDeque(stops.sortedBy { it.exitAtM })
+        val stopPoints: List<MapPoint> = stops.map { it.location.toMap() }
+        /** 지금 다녀오는 중인 장소. 코스 위면 null */
+        var detour: Detour? = null
+        val visitedStops = ArrayList<String>()
+        /** 들렀다 온 동안 흐른 시간(ms, 왕복 + 머문 시간). 이후 시각 계산에 더한다 */
+        var pausedWallMs = 0L
+        var resumedNoticeMs = 0L
+        var resumedStopName = ""
+        /** "곧 빠집니다" 동안 배속을 늦췄으면 true */
+        var slowForNotice = false
+
+        fun wallAt(scriptMs: Long): Long = wallAnchorMs + (scriptMs - scriptAnchorMs) + pausedWallMs
+    }
+
+    /** 들를 곳 한 번 다녀오기. 가는 길 재생 → 도착 → 돌아오는 길 재생 */
+    private inner class Detour(val stop: CourseStop) {
+        var phase = StopPhase.GOING
+            private set
+        var player = ReplayPlayer(stop.outboundDrive.toSignals(0))
+            private set
+        var guide = GuidanceTracker(stop.outbound)
+            private set
+        /** 첫 프레임부터 남은 거리가 보이게 출발점(= 이탈 지점)으로 한 번 맞춰 둔다 */
+        var snapshot: GuidanceSnapshot? = guide.update(stop.outboundDrive.first().point)
+        var route: List<MapPoint> = stop.outbound.geometry.map { it.toMap() }
+            private set
+        private var outboundMs = 0L
+        private val stayMs = config.stopStayMinutes * 60_000L
+
+        /** 이 구간을 [DemoConfig.detourLegSeconds]초 안에 보여 줄 배속 */
+        val legSpeed: Double get() = maxOf(config.minSpeed, player.durationMs / 1000.0 / config.detourLegSeconds)
+
+        /** 빠진 뒤 흐른 시간(ms). 도착하면 머문 시간을 한 번에 더한다 */
+        val elapsedMs: Long
+            get() = when (phase) {
+                StopPhase.GOING -> player.positionMs - player.startMs
+                StopPhase.RETURNING -> outboundMs + stayMs + (player.positionMs - player.startMs)
+                else -> outboundMs + stayMs
+            }
+
+        fun arrive() {
+            outboundMs = player.durationMs
+            phase = StopPhase.ARRIVED
+        }
+
+        fun startReturn() {
+            phase = StopPhase.RETURNING
+            player = ReplayPlayer(stop.inboundDrive.toSignals(0))
+            guide = GuidanceTracker(stop.inbound)
+            snapshot = guide.update(stop.inboundDrive.first().point)
+            route = stop.inbound.geometry.map { it.toMap() }
+        }
     }
 
     private fun handle(signal: DriveSignal) {
@@ -435,12 +569,56 @@ class DemoFlowEngine(
             run.guide = run.courseGuide.update(p)
             run.coursePath += p
             if (run.drawnPath.isEmpty() || distanceM(run.drawnPath.last(), p) >= config.pathSpacingM) run.drawnPath += p
-            if (event is CourseEvent.Finished) finishCourse(run, signal.timeMs)
+            if (event is CourseEvent.Finished) finishCourse(run, signal.timeMs) else leaveCourseIfAtExit(run)
         }
+    }
+
+    /** 다음 들를 곳의 이탈 지점에 왔으면 코스 기록을 멈추고 장소 안내로 바꾼다. 진행 거리는 회전 안내와 같은 코스 경로 기준 */
+    private fun leaveCourseIfAtExit(run: DriveRun) {
+        val next = run.plannedStops.firstOrNull() ?: return
+        val progress = run.guide?.progressM ?: return
+        if (progress < next.exitAtM) return
+        run.plannedStops.removeFirst()
+        run.detour = Detour(next)
+        run.resumedNoticeMs = 0
+        applySpeed(notify = false)
+    }
+
+    /** 왕복 신호는 화면(위치·속도·안내)에만 쓴다. 주행 기록·코스 판정에는 넣지 않는다. */
+    private fun handleDetour(signal: DriveSignal) {
+        val run = drive ?: return
+        val d = run.detour ?: return
+        when (signal) {
+            is DriveSignal.Speed -> run.speedKph = signal.kph
+            is DriveSignal.Position -> {
+                run.position = signal.point
+                d.snapshot = d.guide.update(signal.point)
+            }
+            else -> Unit
+        }
+    }
+
+    /** 빠졌던 코스 지점으로 돌아왔다. 코스 재생을 멈춘 곳부터 이어 간다. */
+    private fun endDetour(run: DriveRun, d: Detour) {
+        run.pausedWallMs += d.elapsedMs
+        run.visitedStops += d.stop.name
+        run.detour = null
+        run.resumedNoticeMs = config.resumedNoticeMs
+        run.resumedStopName = d.stop.name
+        applySpeed(notify = false)
+    }
+
+    /** 이탈 지점이 [DemoConfig.stopNoticeM] 안으로 다가온 다음 장소와 남은 거리(m) */
+    private fun upcomingStop(run: DriveRun): Pair<CourseStop, Double>? {
+        val next = run.plannedStops.firstOrNull() ?: return null
+        val progress = run.guide?.progressM ?: return null
+        val left = next.exitAtM - progress
+        return if (left <= config.stopNoticeM) next to left.coerceAtLeast(0.0) else null
     }
 
     private fun enterCourse(run: DriveRun, event: CourseEvent.Entered) {
         run.enteredAtMs = event.timeMs
+        run.enteredWallMs = run.wallAt(event.timeMs)
         run.enteredDistanceM = run.session.liveDistanceM
         run.enteredSnapshot = run.latest
         run.position?.let {
@@ -457,11 +635,13 @@ class DemoFlowEngine(
         run.finished = true
         val course = run.course
         val start = run.enteredAtMs ?: timeMs
+        // 시작 시각은 코스에 들어간 순간 그대로. 끝 시각에는 들렀다 온 시간이 더해져 있다(wallAt)
+        val startWall = if (run.enteredAtMs != null) run.enteredWallMs else run.wallAt(start)
         val distanceKm = (run.session.liveDistanceM - run.enteredDistanceM) / 1000
         val efficiency = Efficiency.between(run.enteredSnapshot, run.latest, electric = run.energyType == EnergyType.EV)
         val result = DriveResult(
             courseId = course.id,
-            startedAt = Instant.ofEpochMilli(run.wallAt(start)).atOffset(DriveResult.KST),
+            startedAt = Instant.ofEpochMilli(startWall).atOffset(DriveResult.KST),
             endedAt = Instant.ofEpochMilli(run.wallAt(timeMs)).atOffset(DriveResult.KST),
             durationSec = (timeMs - start) / 1000,
             movingSec = run.courseMovingMs / 1000,
@@ -492,13 +672,15 @@ class DemoFlowEngine(
                         source = EfficiencySource.CALCULATED,
                     )
                 },
-                startedAtEpochMs = run.wallAt(start),
+                startedAtEpochMs = startWall,
                 endedAtEpochMs = run.wallAt(timeMs),
                 drivenPath = run.drawnMap + listOfNotNull(run.position?.toMap()),
                 courseShape = run.courseRoad.map { it.toMap() },
                 // 시연: 서버로 보내지 않고 성공 처리, QR은 고정 주소
                 resultUrl = config.resultUrl,
                 upload = UploadStatus.DONE,
+                visitedStops = run.visitedStops.toList(),
+                pausedSec = run.pausedWallMs / 1000,
             ),
             demo = state.demo.copy(playing = false, driveResultJson = json, courseProgress = 1.0),
         )
@@ -507,6 +689,11 @@ class DemoFlowEngine(
     /** 신호를 처리한 뒤 화면 값을 한 번에 갱신한다. */
     private fun afterSignals() {
         val run = drive ?: return
+        val slow = run.detour == null && state.step == DemoStep.DRIVING && upcomingStop(run) != null
+        if (slow != run.slowForNotice) {
+            run.slowForNotice = slow
+            applySpeed(notify = false)
+        }
         val s = state
         val guide = run.guide
         val scriptMs = run.player.positionMs
@@ -522,20 +709,15 @@ class DemoFlowEngine(
             )
             DemoStep.DRIVING -> {
                 val entered = run.enteredAtMs ?: scriptMs
-                s.copy(
-                    driving = s.driving.copy(
-                        isRecording = true,
-                        nextTurn = guide?.let(::turnOf),
-                        arrivalAtEpochMs = guide?.let { run.wallAt(scriptMs) + it.remainingSec * 1000 },
-                        remainingKm = guide?.remainingM?.div(1000),
-                        remainingMinutes = guide?.remainingSec?.let(::ceilMinutes),
-                        drivenKm = (run.session.liveDistanceM - run.enteredDistanceM) / 1000,
-                        elapsedSec = ((scriptMs - entered) / 1000).coerceAtLeast(0),
-                        drivenPath = run.drawnMap,
-                        currentPosition = run.position?.toMap(),
-                        speedKph = run.speedKph,
-                    ),
+                val common = s.driving.copy(
+                    drivenKm = (run.session.liveDistanceM - run.enteredDistanceM) / 1000,
+                    elapsedSec = ((scriptMs - entered) / 1000).coerceAtLeast(0),
+                    drivenPath = run.drawnMap,
+                    currentPosition = run.position?.toMap(),
+                    speedKph = run.speedKph,
                 )
+                val d = run.detour
+                s.copy(driving = if (d == null) onCourse(run, common, guide, scriptMs) else onDetour(run, d, common, scriptMs))
             }
             else -> s
         }
@@ -555,13 +737,16 @@ class DemoFlowEngine(
 
     private fun applySpeed(notify: Boolean = true) {
         val run = drive
+        val detour = run?.detour
         val base = when {
             run == null -> 1.0
+            detour != null -> detour.legSpeed
+            state.step == DemoStep.DRIVING && run.slowForNotice -> maxOf(config.minSpeed, run.drivingSpeed / config.noticeSlowdown)
             state.step == DemoStep.DRIVING -> run.drivingSpeed
             else -> run.approachSpeed
         }
         val speed = base * boost
-        run?.player?.speed = speed
+        if (detour != null) detour.player.speed = speed else run?.player?.speed = speed
         state = state.copy(demo = state.demo.copy(speed = speed, boost = boost))
         if (notify) listener?.invoke(state)
     }
@@ -571,7 +756,54 @@ class DemoFlowEngine(
         listener?.invoke(state)
     }
 
+    /** 코스 위: 평소 기록 화면 + 다가오는 이탈 지점 / 방금 합류 안내 */
+    private fun onCourse(run: DriveRun, base: DrivingUiState, guide: GuidanceSnapshot?, scriptMs: Long): DrivingUiState {
+        val stop = when {
+            run.resumedNoticeMs > 0 -> StopStatus(run.resumedStopName, StopPhase.RESUMED)
+            else -> upcomingStop(run)?.let { (st, left) -> StopStatus(st.name, StopPhase.UPCOMING, distanceM = left.roundToInt()) }
+        }
+        return base.copy(
+            isRecording = true,
+            nextTurn = guide?.let(::turnOf),
+            arrivalAtEpochMs = guide?.let { run.wallAt(scriptMs) + it.remainingSec * 1000 },
+            remainingKm = guide?.remainingM?.div(1000),
+            remainingMinutes = guide?.remainingSec?.let(::ceilMinutes),
+            stop = stop,
+            detourRoute = emptyList(),
+        )
+    }
+
+    /** 들를 곳 왕복 중: 기록은 멈추고, 안내 값은 장소(또는 합류 지점)까지 */
+    private fun onDetour(run: DriveRun, d: Detour, base: DrivingUiState, scriptMs: Long): DrivingUiState {
+        val g = d.snapshot.takeIf { d.phase != StopPhase.ARRIVED }
+        return base.copy(
+            isRecording = false,
+            nextTurn = g?.let(::turnOf),
+            arrivalAtEpochMs = g?.let { run.wallAt(scriptMs) + d.elapsedMs + it.remainingSec * 1000 },
+            remainingKm = g?.remainingM?.div(1000),
+            remainingMinutes = g?.remainingSec?.let(::ceilMinutes),
+            stop = StopStatus(
+                name = d.stop.name,
+                phase = d.phase,
+                distanceM = g?.remainingM?.roundToInt(),
+                minutes = g?.remainingSec?.let(::ceilMinutes),
+            ),
+            detourRoute = d.route,
+        )
+    }
+
     // ---------- 바꾸기 ----------
+
+    private fun stopOption(s: CourseStop) = StopOption(
+        id = s.id,
+        name = s.name,
+        address = s.address,
+        location = s.location.toMap(),
+        exitPoint = s.exit.toMap(),
+        exitAtKm = s.exitAtM / 1000,
+        extraKm = s.extraDistanceM / 1000,
+        extraMinutes = ceilMinutes(s.extraDurationSec),
+    )
 
     private fun coursesFor(regionId: String?, regionName: String?): CoursesUiState {
         if (regionId == null) return CoursesUiState()
