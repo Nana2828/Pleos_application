@@ -17,9 +17,11 @@ import ai.pleosapp.drive.ui.state.ResultUiState
 import ai.pleosapp.drive.ui.state.UploadStatus
 import ai.pleosapp.drive.ui.theme.PleosColors
 import ai.pleosapp.drive.ui.theme.PleosTheme
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -33,7 +35,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -60,64 +65,98 @@ fun ResultScreen(
     val scene = rememberMapScene(state.courseShape, state.drivenPath)
     val course = scene.unit(state.courseShape)
     val driven = scene.unit(state.drivenPath)
-    Row(modifier.fillMaxSize().background(PleosColors.Rail)) {
-        SideRail()
-        Box(Modifier.weight(1f).fillMaxHeight()) {
-            MapPlaceholder { t ->
-                drawPolyline(t, course, PleosColors.Accent, 12.dp.toPx())
-                drawPolyline(t, driven, Color(0xFFE02B2B), 5.dp.toPx())
+    val qrUrl = remember(state.resultUrl, state.startedAtEpochMs, state.endedAtEpochMs, state.drivenPath) {
+        state.resultUrl?.takeIf { state.upload == UploadStatus.DONE }?.let { ResultLink.build(it, state) }
+    }
+    // QR 을 누르면 화면 가득 크게 보여 줘요. 작은 QR 은 칸이 촘촘해서 폰 카메라가 잘 못 읽어요
+    var qrEnlarged by remember { mutableStateOf(false) }
+    Box(modifier.fillMaxSize()) {
+        Row(Modifier.fillMaxSize().background(PleosColors.Rail)) {
+            SideRail()
+            Box(Modifier.weight(1f).fillMaxHeight()) {
+                MapPlaceholder { t ->
+                    drawPolyline(t, course, PleosColors.Accent, 12.dp.toPx())
+                    drawPolyline(t, driven, Color(0xFFE02B2B), 5.dp.toPx())
+                }
+                BackButton(actions::onDone, Modifier.align(Alignment.TopStart).padding(24.dp), label = "처음으로")
             }
-            BackButton(actions::onDone, Modifier.align(Alignment.TopStart).padding(24.dp), label = "처음으로")
-        }
-        Column(
-            Modifier
-                .width(500.dp)
-                .fillMaxHeight()
-                .padding(16.dp)
-                .background(PleosColors.Panel, RoundedCornerShape(28.dp))
-                .padding(horizontal = 28.dp, vertical = 28.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Text("주행 완료", color = PleosColors.TextPrimary, fontSize = 36.sp, fontWeight = FontWeight.Bold, modifier = Modifier.align(Alignment.Start))
-            Text(state.courseName, color = PleosColors.TextSecondary, fontSize = 26.sp, modifier = Modifier.align(Alignment.Start))
-            Spacer(Modifier.height(24.dp))
-            Row(Modifier.fillMaxWidth()) {
-                StatTile(formatKm(state.distanceKm), "주행 거리", Modifier.weight(1f), 34)
-                StatTile(formatDuration(state.durationSec), "주행 시간", Modifier.weight(1f), 34)
-            }
-            Spacer(Modifier.height(20.dp))
-            Row(Modifier.fillMaxWidth()) {
-                StatTile(formatEfficiency(state.efficiency), "평균 연비 (${efficiencyUnit(state.efficiency)})", Modifier.weight(1f), 34)
-                StatTile(state.regionName, "위치", Modifier.weight(1f), 34)
-            }
-            Spacer(Modifier.height(20.dp))
-            Text(formatPeriod(state.startedAtEpochMs, state.endedAtEpochMs), color = PleosColors.TextSecondary, fontSize = 26.sp)
-            // 들렀던 곳 (PLEOS-63): 위 거리·시간·연비에는 다녀온 구간이 빠져 있다고 알려 줘요
-            if (state.visitedStops.isNotEmpty()) {
-                Text(
-                    "들른 곳: ${state.visitedStops.joinToString(", ")} (기록 제외 ${formatDuration(state.pausedSec)})",
-                    color = PleosColors.Stop, fontSize = 20.sp, maxLines = 1,
+            Column(
+                Modifier
+                    .width(500.dp)
+                    .fillMaxHeight()
+                    .padding(16.dp)
+                    .background(PleosColors.Panel, RoundedCornerShape(28.dp))
+                    .padding(horizontal = 28.dp, vertical = 28.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text("주행 완료", color = PleosColors.TextPrimary, fontSize = 36.sp, fontWeight = FontWeight.Bold, modifier = Modifier.align(Alignment.Start))
+                Text(state.courseName, color = PleosColors.TextSecondary, fontSize = 26.sp, modifier = Modifier.align(Alignment.Start))
+                Spacer(Modifier.height(24.dp))
+                Row(Modifier.fillMaxWidth()) {
+                    StatTile(formatKm(state.distanceKm), "주행 거리", Modifier.weight(1f), 34)
+                    StatTile(formatDuration(state.durationSec), "주행 시간", Modifier.weight(1f), 34)
+                }
+                Spacer(Modifier.height(20.dp))
+                Row(Modifier.fillMaxWidth()) {
+                    StatTile(formatEfficiency(state.efficiency), "평균 연비 (${efficiencyUnit(state.efficiency)})", Modifier.weight(1f), 34)
+                    StatTile(state.regionName, "위치", Modifier.weight(1f), 34)
+                }
+                Spacer(Modifier.height(20.dp))
+                Text(formatPeriod(state.startedAtEpochMs, state.endedAtEpochMs), color = PleosColors.TextSecondary, fontSize = 26.sp)
+                // 들렀던 곳 (PLEOS-63): 위 거리·시간·연비에는 다녀온 구간이 빠져 있다고 알려 줘요
+                if (state.visitedStops.isNotEmpty()) {
+                    Text(
+                        "들른 곳: ${state.visitedStops.joinToString(", ")} (기록 제외 ${formatDuration(state.pausedSec)})",
+                        color = PleosColors.Stop, fontSize = 20.sp, maxLines = 1,
+                    )
+                }
+                Spacer(Modifier.height(16.dp))
+                // 웹 주소가 빌드에 없으면(PLEOS-64, local.properties 의 pleos.webUrl) QR 자리에 그렇게 알려 줘요
+                val noWebUrl = state.upload == UploadStatus.DONE && state.resultUrl == null
+                QrCode(
+                    qrUrl, if (noWebUrl) "웹 주소가 설정되지 않았어요" else "결과를 준비하는 중이에요",
+                    Modifier.size(300.dp).then(if (qrUrl != null) Modifier.clickable { qrEnlarged = true } else Modifier),
                 )
+                Spacer(Modifier.height(12.dp))
+                when (state.upload) {
+                    UploadStatus.UPLOADING -> Text("결과를 보내는 중이에요", color = PleosColors.TextSecondary, fontSize = 26.sp, textAlign = TextAlign.Center)
+                    UploadStatus.DONE -> Text(
+                        if (noWebUrl) "local.properties 에 pleos.webUrl 을 넣고 다시 빌드해요" else "QR을 눌러 크게 보고 찍어요",
+                        color = PleosColors.TextSecondary, fontSize = if (noWebUrl) 20.sp else 26.sp, textAlign = TextAlign.Center,
+                    )
+                    UploadStatus.FAILED -> Text(
+                        "결과를 보내지 못했어요. 눌러서 다시 보내기", color = PleosColors.DangerText, fontSize = 24.sp, textAlign = TextAlign.Center,
+                        modifier = Modifier.clickable(onClick = actions::onRetryUpload).padding(8.dp),
+                    )
+                }
+            }
+        }
+        if (qrEnlarged && qrUrl != null) {
+            EnlargedQr(qrUrl, onClose = { qrEnlarged = false })
+        }
+    }
+}
+
+/** 화면 가득 크게 띄운 결과 QR. 아무 데나 누르거나 뒤로 가기를 누르면 닫혀요. */
+@Composable
+private fun EnlargedQr(url: String, onClose: () -> Unit) {
+    BackHandler(onBack = onClose)
+    BoxWithConstraints(
+        Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.85f))
+            .clickable(onClick = onClose),
+        contentAlignment = Alignment.Center,
+    ) {
+        // 아래 안내 문구 자리를 빼고 남는 높이를 모두 QR 에 써요
+        val side = minOf(maxHeight - 96.dp, maxWidth - 48.dp)
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            // 큰 QR 은 칸도 커서, 바깥 흰 여백(카메라가 QR 테두리를 찾는 자리)을 넉넉히 둬요
+            Box(Modifier.background(Color.White, RoundedCornerShape(16.dp)).padding(16.dp)) {
+                QrCode(url, "", Modifier.size(side - 32.dp))
             }
             Spacer(Modifier.height(16.dp))
-            val qrUrl = remember(state.resultUrl, state.startedAtEpochMs, state.endedAtEpochMs, state.drivenPath) {
-                state.resultUrl?.takeIf { state.upload == UploadStatus.DONE }?.let { ResultLink.build(it, state) }
-            }
-            // 웹 주소가 빌드에 없으면(PLEOS-64, local.properties 의 pleos.webUrl) QR 자리에 그렇게 알려 줘요
-            val noWebUrl = state.upload == UploadStatus.DONE && state.resultUrl == null
-            QrCode(qrUrl, if (noWebUrl) "웹 주소가 설정되지 않았어요" else "결과를 준비하는 중이에요", Modifier.size(300.dp))
-            Spacer(Modifier.height(12.dp))
-            when (state.upload) {
-                UploadStatus.UPLOADING -> Text("결과를 보내는 중이에요", color = PleosColors.TextSecondary, fontSize = 26.sp, textAlign = TextAlign.Center)
-                UploadStatus.DONE -> Text(
-                    if (noWebUrl) "local.properties 에 pleos.webUrl 을 넣고 다시 빌드해요" else "QR을 찍어 친구와 비교해요",
-                    color = PleosColors.TextSecondary, fontSize = if (noWebUrl) 20.sp else 26.sp, textAlign = TextAlign.Center,
-                )
-                UploadStatus.FAILED -> Text(
-                    "결과를 보내지 못했어요. 눌러서 다시 보내기", color = PleosColors.DangerText, fontSize = 24.sp, textAlign = TextAlign.Center,
-                    modifier = Modifier.clickable(onClick = actions::onRetryUpload).padding(8.dp),
-                )
-            }
+            Text("폰 카메라로 찍어 친구와 비교해요 · 화면을 누르면 닫혀요", color = Color.White, fontSize = 26.sp)
         }
     }
 }

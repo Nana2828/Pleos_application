@@ -53,10 +53,13 @@ fun QrCode(content: String?, emptyText: String, modifier: Modifier = Modifier) {
     }
 }
 
-/** 여백 없는 QR(오류 정정 M)을 1점 = 1픽셀 비트맵으로. 너무 길면 null. */
+/**
+ * 여백 없는 QR(오류 정정 L)을 1점 = 1픽셀 비트맵으로. 너무 길면 null.
+ * 화면에 띄우는 QR 은 찢어지거나 더러워질 일이 없어서, 정정을 낮춰 칸 수를 줄였어요(칸이 커져 폰이 더 잘 읽어요).
+ */
 private fun encodeQr(content: String): ImageBitmap? = try {
     val hints = mapOf(
-        EncodeHintType.ERROR_CORRECTION to ErrorCorrectionLevel.M,
+        EncodeHintType.ERROR_CORRECTION to ErrorCorrectionLevel.L,
         EncodeHintType.MARGIN to 0,
         EncodeHintType.CHARACTER_SET to "UTF-8",
     )
