@@ -1,9 +1,32 @@
+<p align="center">
+  <img src="docs/images/icon.png" width="140" alt="IDID 앱 아이콘" />
+</p>
 
-# IDID (I drive, I draw)
+<h1 align="center">IDID (I drive, I draw)</h1>
+
+<p align="center">
+  차 안에서 모양 코스를 골라 달리며 지도에 그림을 그리고,<br/>
+  결과 QR로 친구와 기록을 비교하는 드라이브 앱
+</p>
+
+<p align="center">
+  <img src="docs/images/overview.png" width="800" alt="IDID 전체 흐름" />
+</p>
 
 차 인포테인먼트 화면에서 **지역별 드라이브 코스(하트, 고양이, 강아지 꼬리 모양 등)** 를 골라 달리고, 도착하면 결과 카드와 **QR** 로 주행 기록을 폰에서 확인·공유하는 앱이에요. Pleos 공모전 팀 프로젝트입니다.
 
 > 현재 버전은 **시연(데모) 버전**이에요. 코스 안내 데이터와 가짜 주행 신호가 앱 안(`assets/demo`)에 들어 있어서, **서버나 인터넷 없이** 앱만 설치하면 처음부터 끝까지 한 바퀴를 체험할 수 있어요.
+
+## 데모 화면
+
+<p align="center">
+  <img src="docs/ui/page-2.png" width="48%" alt="코스 선택" />
+  <img src="docs/ui/page-5.png" width="48%" alt="주행 기록" />
+  <img src="docs/ui/page-6.png" width="48%" alt="결과 QR" />
+  <img src="docs/ui/page-8.png" width="48%" alt="친구 비교" />
+</p>
+
+<p align="center"><sub>코스 선택 · 주행 기록 · 결과 QR · 친구 비교 (전체 8장: <a href="docs/ui/">docs/ui/</a>)</sub></p>
 
 ## 데모 흐름 (수원 하트 코스)
 
@@ -17,6 +40,15 @@ IDID(I drive, I draw)는 차량 인포테인먼트에서 지역과 모양 코스
 6. **결과 화면**: 도착하면 지도 위에 그려진 경로와 연비, 거리, 시간이 나오고 결과 QR이 표시됩니다. 기록은 서버에 저장됩니다.
 7. **내 결과 확인**: 스마트폰으로 QR을 찍으면 내 결과 페이지(거리, 시간, 연비, 경로)가 열립니다.
 8. **친구 비교**: "11월 드라이브왕" 화면에서 내 최고 기록과 1~3위 시상대, 연비·누적시간·주행거리 부문 순위, 내 최근 기록을 봅니다
+
+## 구성
+
+| 구성요소 | 역할 |
+|---|---|
+| 인포테인먼트 (Pleos 앱) | 지역 입력, 코스 선택, 안내, 주행 기록, 결과 QR |
+| 운전자 휴대폰 (웹) | 결과 확인, 친구 등록, 비교 |
+| FastAPI 서버 | 코스 조회, 경로 생성, 기록 가공, 랭킹 계산 |
+| DB | 프리셋 코스, 주행 기록, 친구 관계 |
 
 ## 준비물
 
@@ -130,6 +162,7 @@ python -I android/tools/demo/build_demo_data.py <코스 JSON> [--out <폴더>]
 - 역할 분담: [docs/team-roles.md](docs/team-roles.md)
 - 시나리오: [docs/scenario-flow.md](docs/scenario-flow.md)
 - 안드로이드 앱 상세: [android/README.md](android/README.md)
+- 앱 아이콘 원본(낮·밤, PNG·SVG): [docs/icons/](docs/icons/)
 
 ## 출처
 
