@@ -42,7 +42,7 @@ IDID(I drive, I draw)는 차량 인포테인먼트에서 지역과 모양 코스
 
 1. **지역 입력**: 인포테인먼트가 "어디로 가시겠어요?"라고 묻고, 운전자가 "수원"이라고 말합니다. 음성은 차 안에서 글자로 바꾸고, 음성 원문은 밖으로 보내지 않습니다(데모는 터치 입력).
 2. **코스 선택**: 수원 근처 모양 코스(표범, 하트, 촛불)가 지도 위 미리보기와 함께 나오고, 운전자가 "하트 코스"를 고릅니다.
-3. **코스 받기**: 선택한 지역과 코스 이름(텍스트)만 FastAPI 서버에 보내고, 서버가 DB의 프리셋 코스로 경로·모양 데이터(코스 JSON)를 응답합니다. 현재 위치는 보내지 않습니다.
+3. **코스 받기**: 선택한 지역과 코스 이름(텍스트)만 FastAPI 서버에 보내고, 서버가 DB의 프리셋 코스로 경로·모양 데이터(코스 JSON)를 응답합니다. 현재 위치는 보내지 않습니다. (서버는 설계 단계라, 지금 데모는 앱 안의 코스 데이터를 씁니다.)
 4. **시작점까지 안내**: 확인을 누르면 코스 시작점까지 안내합니다(NaviHelper SDK).
 5. **주행 기록**: 코스에 처음 진입하면 기록이 시작됩니다. 이동 경로, 평균 연비, 주행 시간, 거리를 차 안에 저장합니다(NaviHelper, FusedLocation, Vehicle SDK).
 6. **결과 화면**: 도착하면 지도 위에 그려진 경로와 연비, 거리, 시간이 나오고 결과 QR이 표시됩니다. 기록은 서버로 보내지 않고, 결과 요약을 QR 주소 안(`#` 뒤)에 담습니다.
@@ -55,20 +55,28 @@ IDID(I drive, I draw)는 차량 인포테인먼트에서 지역과 모양 코스
 |---|---|
 | 인포테인먼트 (Pleos 앱) | 지역 입력, 코스 선택, 안내, 주행 기록, 결과 QR |
 | 운전자 휴대폰 (웹) | QR 결과 풀기·확인, 받은 기록 보관(브라우저 저장소), 친구 비교·랭킹 계산 |
-| FastAPI 서버 | 지역·코스 텍스트를 받아 코스 JSON 응답 (주행 기록은 받지 않음) |
-| DB | 프리셋 코스만 |
+| FastAPI 서버 | (설계 단계, 이번 데모에는 미포함) 지역·코스 텍스트를 받아 코스 JSON 응답. 주행 기록은 받지 않음 |
+| DB | (설계 단계) 프리셋 코스만. 주행 기록·사용자 정보는 저장하지 않음 |
+
+> 지금 저장소에서 코드가 있는 부분은 인포테인먼트 앱(`android/`)뿐이에요. 데모 코스는 앱 안(`android/app/src/main/assets/demo`)에 들어 있어요.
 
 ## 준비물
 
 | 항목 | 버전 |
 |---|---|
-| Android Studio | 최신 안정 버전 (Koala 이상 권장) |
+| Android Studio | **Ladybug (2024.2.1) 이상** (AGP 8.7.3을 쓰기 때문이에요) |
 | JDK | 17 (Android Studio 내장 JDK 사용 가능) |
-| Android SDK | API 34 (compileSdk / targetSdk 34, minSdk 28) |
+| Android SDK | SDK Platform **API 34** (compileSdk / targetSdk 34, minSdk 28) |
 | Gradle | 8.9 (프로젝트의 `gradlew`가 알아서 내려받아요) |
-| 에뮬레이터 | **Pleos Connect Emulator (API 34)** 권장 |
+| Pleos Vehicle SDK | 2.3.2 (`ai.pleos.playground:Vehicle`, Gradle이 자동으로 받아요) |
+| 에뮬레이터 | **Pleos Connect Emulator** (API 34, Automotive). 시스템 이미지 URL은 공모전·Pleos 측에서 따로 받아요 |
+| Python | 3.8 이상 (선택: 시연 데이터를 새로 만들 때만, 표준 라이브러리만 써요) |
 
 > 처음 빌드할 때 Gradle과 라이브러리를 내려받으니 **인터넷 연결**이 필요해요. Pleos Vehicle SDK는 `nexus-playground.pleos.ai` 저장소에서 받아요 (`android/settings.gradle.kts`에 이미 설정되어 있어요).
+>
+> Vehicle SDK는 신청서에 적은 **2.3.1** 기준으로 시작했고, 이후 Pleos 문서의 최신 버전인 **2.3.2**로 올렸어요.
+>
+> **API 키나 `.env` 설정 없이** 빌드·실행돼요. 결과 QR을 폰에서 열 때만 `android/local.properties`에 `pleos.webUrl`을 넣어요(아래 "결과 QR 설정").
 
 ## 실행 방법
 
@@ -79,13 +87,21 @@ git clone https://github.com/Nana2828/Pleos_application.git
 cd Pleos_application
 ```
 
+> 저장소가 비공개일 때는 초대받은 GitHub 계정으로만 받을 수 있어요.
+
 ### 2. Android Studio에서 열기
 
 **File → Open** 에서 저장소 전체가 아니라 **`android/` 폴더** 를 선택해요. (Gradle 프로젝트가 `android/` 안에 있어요.) 열면 Gradle Sync가 자동으로 시작돼요. 끝날 때까지 기다려 주세요.
 
 ### 3. Pleos Connect Emulator 준비
 
-Pleos 공식 문서의 안내에 따라 Pleos Connect Emulator(API 34)를 설치하고 실행해 주세요. 에뮬레이터가 켜져 있으면 Android Studio 상단의 기기 목록에 나타나요.
+Pleos 공식 문서([Getting Started](https://document.pleos.ai/docs/pleos-only/getting-started))의 안내에 따라 설치해요.
+
+1. **Tools → SDK Manager → SDK Update Sites** 에서 공모전·Pleos 측에서 받은 Pleos Connect 시스템 이미지 URL을 추가해요.
+2. **SDK Platforms** 에서 API 34용 Pleos Connect 시스템 이미지를 설치하고 Android Studio를 다시 시작해요.
+3. **Tools → Device Manager → Create device → Automotive → Pleos Connect** 를 고르고, RAM 4 GB, Boot option **Cold boot** 로 만들어 실행해요.
+
+에뮬레이터가 켜져 있으면 Android Studio 상단의 기기 목록에 나타나요.
 
 ### 4. 앱 실행
 
@@ -140,15 +156,15 @@ cd android
 Pleos_application/
 ├── android/     인포 앱 (Kotlin, Jetpack Compose, MVVM)  ← 지금 실행하는 부분
 │   ├── app/src/main/java/ai/pleosapp/drive/
-│   │   ├── core/    주행 계산, 코스 매칭, 내비 안내, 가짜 주행 재생
-│   │   └── ui/      화면(지역·미리보기·확인·주행·결과)과 화면 상태
+│   │   ├── core/    주행 계산, 코스 목록, 코스 매칭, 내비 안내, 가짜 주행 재생
+│   │   └── ui/      화면(지역·미리보기·길이·확인·시작점 안내·주행·결과·시연 도구)과 화면 상태
 │   ├── app/src/main/assets/demo/   시연용 코스 · 경로 · 주행 신호 데이터
 │   └── tools/demo/                 시연 데이터를 만드는 Python 스크립트
-├── server/      API 서버 (FastAPI)
-├── simulator/   가상주행
-├── data/        경로 프리셋, 코스 DB
-├── web/         폰 웹 (결과, 친구 비교, QR)
-├── shared/      공유 JSON 규격
+├── server/      API 서버 (FastAPI) — 설계 문서(README)만, 구현 예정
+├── simulator/   가상주행 — 설계 문서만 (시연용 주행 신호는 android/tools/demo 에서 만들어요)
+├── data/        경로 프리셋, 코스 DB — 설계 문서만 (데모 코스는 assets/demo 에 있어요)
+├── web/         폰 웹 (결과, 친구 비교, QR) — 설계 문서만, 웹 담당이 따로 관리
+├── shared/      공유 JSON 규격 — 설계 문서만
 └── docs/        기획, 시나리오, 역할, UI 시안
 ```
 
@@ -161,8 +177,10 @@ Kotlin 2.0.21 · Jetpack Compose (BOM 2024.12.01, Material3) · MVVM (ViewModel 
 `android/tools/demo/build_demo_data.py` 가 코스 JSON을 받아 안내 경로와 가짜 주행 신호를 만들어요. OSRM 공개 서버를 호출하므로 인터넷이 필요하고, 앱 실행에는 필요하지 않아요.
 
 ```bash
-python -I android/tools/demo/build_demo_data.py <코스 JSON> [--out <폴더>]
+python3 -I android/tools/demo/build_demo_data.py <코스 JSON> [--out <폴더>]
 ```
+
+Windows는 `python3` 대신 `py -3` 을 써요.
 
 ## 더 알아보기
 
