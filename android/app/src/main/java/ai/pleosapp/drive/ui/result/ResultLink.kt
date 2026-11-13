@@ -15,7 +15,7 @@ import kotlin.math.roundToInt
 import kotlin.math.roundToLong
 
 /**
- * 결과 화면 QR 에 넣을 주소를 만들어요 (PLEOS-46, 폰 웹은 은빈 님 PLEOS-48).
+ * 결과 화면 QR 에 넣을 주소를 만들어요 (PLEOS-46, 폰 웹은 A 담당 PLEOS-48).
  *
  * 서버가 아직 없어서, 이번 주행 결과를 주소 안에 같이 담아요:
  * `{웹 기본 주소}?tripId={주행 ID}&d={결과 JSON 을 base64url 로 바꾼 글자}`
@@ -41,7 +41,7 @@ object ResultLink {
     /** 웹이 허용하는 ID 모양(영문·숫자·밑줄·하이픈 1~64자)으로 만든 주행 ID */
     fun tripId(s: ResultUiState): String = "r${s.startedAtEpochMs}"
 
-    /** QR 에 넣을 전체 주소. [base] 는 재원 님 `resultUrl`(웹 기본 주소). */
+    /** QR 에 넣을 전체 주소. [base] 는 D 담당 `resultUrl`(웹 기본 주소). */
     fun build(base: String, s: ResultUiState): String {
         val sep = if (base.contains('?')) "&" else "?"
         val d = Base64.getUrlEncoder().withoutPadding().encodeToString(payload(s).toString().toByteArray(Charsets.UTF_8))

@@ -1,6 +1,6 @@
 # 📱 android/ — 인포 앱
 
-담당: D 재원(코어), E 나연(화면)
+담당: D 담당(코어), E 담당(화면)
 
 - 기술: Jetpack Compose, MVVM(ViewModel + StateFlow), Retrofit + OkHttp, kotlinx.serialization
 - Pleos SDK: NaviHelper(경로 안내), Vehicle `ai.pleos.playground:Vehicle:2.3.2`(연비·거리·시간)
@@ -31,7 +31,7 @@ cd android
 
 ## 📷 결과 QR 웹 주소 설정 (PLEOS-64)
 
-결과 화면 QR은 폰 웹(은빈 님 `web/drive-run-web`)을 열어요. 노트북에서 웹 서버를 켜고, 그 주소를 `android/local.properties`에 적은 뒤 다시 빌드해요.
+결과 화면 QR은 폰 웹(A 담당 `web/drive-run-web`)을 열어요. 노트북에서 웹 서버를 켜고, 그 주소를 `android/local.properties`에 적은 뒤 다시 빌드해요.
 
 1. 노트북에서 폰 웹 서버 켜기: `cd web/drive-run-web` → `node server.cjs`
    - 화면에 `Wi-Fi: http://192.168.x.x:5173` 처럼 노트북 주소가 나와요.
@@ -51,19 +51,19 @@ cd android
 ```
 app/src/main/java/ai/pleosapp/drive/
 ├── MainActivity.kt  # 앱 진입점
-├── core/        # D 재원: SDK 연결, 서버 통신, 주행 기록, 가상주행 모드
+├── core/        # D 담당: SDK 연결, 서버 통신, 주행 기록, 가상주행 모드
 │   ├── navi/
 │   ├── vehicle/
 │   ├── network/
 │   └── model/   # shared/ JSON과 같은 모양의 data class
 └── ui/
-    ├── state/       # D 재원: 화면별 UiState·Actions·ViewModel, 가짜 데이터(FakeUiStates) (PLEOS-58)
-    ├── region/      # E 나연: PLEOS-42 지역 입력
-    ├── courses/     # E 나연: PLEOS-43 코스 목록·미리보기
-    ├── confirm/     # E 나연: PLEOS-44 안내 확인 (+ 시작점까지 안내)
-    ├── driving/     # E 나연: PLEOS-45 주행 중
-    ├── result/      # E 나연: PLEOS-46 결과 + QR
-    └── theme/       # E 나연
+    ├── state/       # D 담당: 화면별 UiState·Actions·ViewModel, 가짜 데이터(FakeUiStates) (PLEOS-58)
+    ├── region/      # E 담당: PLEOS-42 지역 입력
+    ├── courses/     # E 담당: PLEOS-43 코스 목록·미리보기
+    ├── confirm/     # E 담당: PLEOS-44 안내 확인 (+ 시작점까지 안내)
+    ├── driving/     # E 담당: PLEOS-45 주행 중
+    ├── result/      # E 담당: PLEOS-46 결과 + QR
+    └── theme/       # E 담당
 ```
 
 ### D·E 경계 (가안: D가 ViewModel·상태 담당)

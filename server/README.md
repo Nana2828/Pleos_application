@@ -1,6 +1,6 @@
 # 🖥️ server/ — FastAPI 서버
 
-담당: C 원준
+담당: C 담당
 
 - 기술: Python 3, FastAPI, Pydantic, Uvicorn, SQLAlchemy
 - API (시나리오 문서 6번): `GET /courses?region=`, `POST /course/route`, `POST /drive`, `GET /drive/{id}`, `GET /ranking?month=`
