@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 출처: idid-icon-night.svg (팀 제공 앱 아이콘)을 옮긴 것. 원본 좌표계 200x200, 점선은 점으로 바꿈 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="200"
+    android:viewportHeight="200">
+    <group
+        android:pivotX="100"
+        android:pivotY="100"
+        android:scaleX="0.85"
+        android:scaleY="0.85">
+        <!-- 남은 코스(점선) -->
+        <path
+            android:fillColor="#9AA6C8"
+            android:pathData="M100.50,54.00a3.5,3.5 0 1,0 7.0,0a3.5,3.5 0 1,0 -7.0,0zM113.03,50.74a3.5,3.5 0 1,0 7.0,0a3.5,3.5 0 1,0 -7.0,0zM125.49,54.30a3.5,3.5 0 1,0 7.0,0a3.5,3.5 0 1,0 -7.0,0zM135.29,62.90a3.5,3.5 0 1,0 7.0,0a3.5,3.5 0 1,0 -7.0,0zM142.08,74.05a3.5,3.5 0 1,0 7.0,0a3.5,3.5 0 1,0 -7.0,0zM144.47,86.67a3.5,3.5 0 1,0 7.0,0a3.5,3.5 0 1,0 -7.0,0zM141.65,99.42a3.5,3.5 0 1,0 7.0,0a3.5,3.5 0 1,0 -7.0,0zM136.51,111.47a3.5,3.5 0 1,0 7.0,0a3.5,3.5 0 1,0 -7.0,0zM129.96,122.80a3.5,3.5 0 1,0 7.0,0a3.5,3.5 0 1,0 -7.0,0zM122.43,133.52a3.5,3.5 0 1,0 7.0,0a3.5,3.5 0 1,0 -7.0,0zM114.15,143.67a3.5,3.5 0 1,0 7.0,0a3.5,3.5 0 1,0 -7.0,0zM105.23,153.27a3.5,3.5 0 1,0 7.0,0a3.5,3.5 0 1,0 -7.0,0z" />
+        <!-- 달린 코스 -->
+        <path
+            android:pathData="M100,158C74,142 50,114 52,82C53,60 66,50 79,50C89,50 94,53 98,57"
+            android:strokeWidth="17"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round">
+            <aapt:attr name="android:strokeColor">
+                <gradient
+                    android:type="linear"
+                    android:startX="100"
+                    android:startY="160"
+                    android:endX="80"
+                    android:endY="42">
+                    <item android:offset="0" android:color="#FF4FD8D8" />
+                    <item android:offset="1" android:color="#FF7B8DF5" />
+                </gradient>
+            </aapt:attr>
+        </path>
+        <!-- 차: translate(98,72) rotate(40) scale(.9) -->
+        <group
+            android:translateX="98"
+            android:translateY="72"
+            android:rotation="40"
+            android:scaleX="0.9"
+            android:scaleY="0.9">
+            <path
+                android:fillColor="#FFFFFF"
+                android:pathData="M-1,-26h2a11,11 0 0,1 11,11v30a11,11 0 0,1 -11,11h-2a11,11 0 0,1 -11,-11v-30a11,11 0 0,1 11,-11z" />
+            <path
+                android:fillColor="#1A2766"
+                android:pathData="M-8,-14L8,-14L7,-4L-7,-4Z" />
+            <path
+                android:fillAlpha="0.8"
+                android:fillColor="#1A2766"
+                android:pathData="M-8,9L8,9L7,17L-7,17Z" />
+            <path
+                android:fillColor="#FFD400"
+                android:pathData="M-11.50,-27.00a3,3 0 1,0 6,0a3,3 0 1,0 -6,0zM5.50,-27.00a3,3 0 1,0 6,0a3,3 0 1,0 -6,0z" />
+        </group>
+    </group>
+</vector>

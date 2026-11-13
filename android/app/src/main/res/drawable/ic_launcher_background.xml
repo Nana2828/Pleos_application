@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 출처: idid-icon-night.svg (팀 제공 앱 아이콘)을 옮긴 것. 원본 좌표계 200x200, 점선은 점으로 바꿈 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="200"
+    android:viewportHeight="200">
+    <group
+        android:pivotX="100"
+        android:pivotY="100"
+        android:scaleX="0.85"
+        android:scaleY="0.85">
+        <path
+            android:fillColor="#0F1A3D"
+            android:pathData="M-40,-40h280v280h-280z" />
+        <path
+            android:pathData="M-24,-40V240M24,-40V240M72,-40V240M120,-40V240M168,-40V240M216,-40V240M-40,-13H240M-40,35H240M-40,83H240M-40,131H240M-40,179H240M-40,227H240"
+            android:strokeColor="#1D2B5F"
+            android:strokeWidth="2.6" />
+    </group>
+</vector>
