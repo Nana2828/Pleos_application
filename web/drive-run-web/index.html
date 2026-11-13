@@ -3,14 +3,17 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#0B0B0B" />
-  <title>DRIVE RUN | 나의 드라이브 기록</title>
+  <meta name="theme-color" content="#080B13" />
+  <title>I Drive, I Draw | 나의 드라이브 기록</title>
+  <link rel="icon" type="image/svg+xml" href="assets/idid-icon-night.svg" />
+  <link rel="icon" type="image/png" sizes="1024x1024" href="assets/idid-icon-night-rounded-1024.png" />
+  <link rel="apple-touch-icon" href="assets/idid-icon-night-rounded-1024.png" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <div class="app-shell">
     <header class="header">
-      <div class="brand"><b>DRIVE<span>RUN</span></b><small lang="en">DRIVE YOUR OWN LINE.</small></div>
+      <div class="brand"><img class="brand-logo" src="assets/idid-icon-night.svg" width="40" height="40" alt="" /><div class="brand-copy"><b lang="en">I Drive, I Draw</b><small lang="en">EVERY DRIVE, A NEW DRAWING.</small></div></div>
       <span class="demo-badge" aria-label="샘플 데이터">DEMO / 01</span>
     </header>
     <main class="content">
@@ -20,7 +23,7 @@
           <p id="trip-message-detail">주행 ID를 확인하고 있습니다.</p>
           <a id="trip-sample-link" href="?tripId=abc123" hidden>기본 샘플 기록 보기</a>
         </div>
-        <div class="heading-row"><div><h1 id="result-title" lang="en">DRIVE RECORD</h1><p class="subline" id="drive-date">2026.11.05 · 수원시</p><p class="subline" id="trip-times" hidden></p></div></div>
+        <div class="heading-row"><div><h1 id="result-title" lang="en">DRIVE RECORD</h1><p class="subline" id="drive-date">2026.11.05 · 수원시</p></div><details class="trip-details"><summary>상세</summary><p class="subline" id="trip-id"></p><p class="subline" id="trip-times" hidden></p></details></div>
         <article class="metric metric-hero" aria-labelledby="distance-label">
           <span id="distance-label" class="metric-label"><span id="distance-kind">주행 거리</span> <span lang="en">DISTANCE</span></span>
           <div class="hero-reading"><strong id="distance">42.3</strong><small>KM</small></div>
@@ -33,10 +36,7 @@
               <p id="map-status" role="status" aria-live="polite">지도를 불러오는 중입니다.</p>
               <button id="retry-map" type="button" hidden>지도 다시 불러오기</button>
             </div>
-            <div class="map-caption">
-              <span id="route-notice">데모 경로 · 요약 수치는 별도 샘플</span>
-              <span class="map-attribution">지도: <a href="https://openfreemap.org/" target="_blank" rel="noopener noreferrer">OpenFreeMap</a> · <a href="https://openmaptiles.org/" target="_blank" rel="noopener noreferrer">© OpenMapTiles</a> · <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap 기여자</a></span>
-            </div>
+            <span id="route-notice" class="visually-hidden">데모 경로 · 요약 수치는 별도 샘플</span>
           </div>
         </div>
         <div class="metric-grid" role="group" aria-label="주행 보조 지표">
@@ -66,7 +66,10 @@
         </section>
       </section>
     </main>
-    <nav class="bottom-nav" aria-label="페이지 이동"><button class="nav-item selected" data-page="result"><span class="nav-index" aria-hidden="true">01</span>내 기록</button><button class="nav-item" data-page="ranking"><span class="nav-index" aria-hidden="true">02</span>친구 랭킹</button></nav>
+    <nav class="bottom-nav" aria-label="페이지 이동">
+      <button class="nav-item selected" data-page="result"><svg class="nav-icon user-round" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/></svg><span>내 기록</span></button>
+      <button class="nav-item" data-page="ranking"><svg class="nav-icon users-round" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="10" cy="8" r="5"/><path d="M18 21a8 8 0 0 0-16 0M22 20c0-3.37-2-6.5-4-8M16 3.13a5 5 0 0 1 0 9.75"/></svg><span>친구 랭킹</span></button>
+    </nav>
   </div>
   <script src="data.js"></script>
   <script src="course-data.js"></script>

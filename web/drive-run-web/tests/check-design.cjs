@@ -8,12 +8,12 @@ const token = name => {
   assert.ok(match, 'Missing color token: ' + name);
   return match[1].toUpperCase();
 };
-for (const [name, hex] of Object.entries({primary:'#C8FF00', background:'#0B0B0B', surface:'#171717', text:'#F5F5F0', 'secondary-text':'#949494'})) assert.equal(token(name), hex);
+for (const [name, hex] of Object.entries({primary:'#7892F3', background:'#080B13', surface:'#111827', text:'#F8FAFF', 'secondary-text':'#AAB7CC', line:'#29334D', 'podium-silver':'#7B8DF5', 'accent-yellow':'#FFE064', 'map-route-casing':'#080B13'})) assert.equal(token(name), hex);
 function luminance(hex) {
   const rgb = [1,3,5].map(i => parseInt(hex.slice(i,i+2),16)/255).map(v => v <= .04045 ? v/12.92 : ((v+.055)/1.055)**2.4);
   return .2126*rgb[0]+.7152*rgb[1]+.0722*rgb[2];
 }
-for (const [fg,bg] of [['text','background'],['text','surface'],['secondary-text','background'],['secondary-text','surface'],['background','primary'],['text','podium-bronze']]) {
+for (const [fg,bg] of [['text','background'],['text','surface'],['secondary-text','background'],['secondary-text','surface'],['background','primary'],['background','podium-silver'],['primary','background'],['podium-silver','background'],['text','podium-bronze']]) {
   const a=luminance(token(fg)),b=luminance(token(bg)),ratio=(Math.max(a,b)+.05)/(Math.min(a,b)+.05);
   assert.ok(ratio >= 4.5, 'Insufficient text contrast: '+fg+' / '+bg);
   console.log(`${fg} / ${bg}: ${ratio.toFixed(2)}:1`);

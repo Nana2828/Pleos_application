@@ -19,6 +19,7 @@ window.driveRouteMap = (() => {
   function message(text, failed = false) {
     status().textContent = text;
     status().classList.toggle('map-error', failed);
+    status().parentElement.hidden = !text;
     retry().hidden = !failed;
   }
 
@@ -67,15 +68,15 @@ window.driveRouteMap = (() => {
     if (!map || !coordinates.length || !document.querySelector('#route-map').clientWidth) return;
     const bounds = [...coordinates, ...waypoints.map(point => point.coordinates)]
       .reduce((box, point) => box.extend(point), new maplibregl.LngLatBounds());
-    // 위쪽 확대/축소 버튼과 아래쪽 출처 표시를 피해 경로 전체를 넣습니다.
-    map.fitBounds(bounds, {padding: {top: 55, right: 48, bottom: 40, left: 24}, maxZoom: 16, duration: 0});
+    // 오른쪽 확대/축소와 하단 출처 컨트롤을 피해 경로 전체를 넣습니다.
+    map.fitBounds(bounds, {padding: {top: 24, right: 64, bottom: 56, left: 24}, maxZoom: 16, duration: 0});
   }
 
   function drawRoute() {
     if (!map || !styleReady) return;
     const colors = getComputedStyle(document.documentElement);
-    const routeColor = colors.getPropertyValue('--primary').trim() || '#C8FF00';
-    const casingColor = colors.getPropertyValue('--map-route-casing').trim() || '#0B0B0B';
+    const routeColor = colors.getPropertyValue('--primary').trim() || '#7892F3';
+    const casingColor = colors.getPropertyValue('--map-route-casing').trim() || '#080B13';
     const data = {
       type: 'FeatureCollection',
       features: coordinates.length ? [{
@@ -86,7 +87,7 @@ window.driveRouteMap = (() => {
     const source = map.getSource('drive-route');
     if (source) source.setData(data);
     else {
-      // 경로 표현만 변경합니다. 라임과 어두운 외곽선으로 밝은 지도에서도 구분합니다.
+      // 브랜드 블루와 어두운 외곽선으로 밝은 지도에서도 구분합니다.
       map.addSource('drive-route', {type: 'geojson', data});
       map.addLayer({
         id: 'drive-route-casing', type: 'line', source: 'drive-route',
@@ -163,12 +164,16 @@ window.driveRouteMap = (() => {
       map = new maplibregl.Map({
         container: 'route-map', style: STYLE,
         center: [127.022, 37.294], zoom: 13,
-        attributionControl: false, // 카드 아래에 출처를 항상 펼쳐 표시합니다.
+        attributionControl: false, // 아래에서 공식 컴팩트 컨트롤을 직접 추가합니다.
+        locale: {'AttributionControl.ToggleAttribution': '지도 출처 보기'},
         dragRotate: false, pitchWithRotate: false
       });
       const instance = map;
       map.touchZoomRotate.disableRotation();
       map.addControl(new maplibregl.NavigationControl({showCompass: false}), 'top-right');
+      // 타일 소스의 필수 출처를 자동 수집합니다. 중복 출처 문자열은 추가하지 않습니다.
+      map.addControl(new maplibregl.AttributionControl({compact: true}), 'bottom-right');
+      let attributionInitialized = false;
       map.on('style.load', () => {
         if (generation !== mapGeneration) return;
         styleReady = true;
@@ -182,7 +187,15 @@ window.driveRouteMap = (() => {
         // 실패한 타일도 로딩 종료로 처리될 수 있으므로 오류는 재시도 전까지 유지합니다.
         if (generation !== mapGeneration || hasMapError || !navigator.onLine || !instance.areTilesLoaded()) return;
         clearTimeout(loadingTimer);
-        message(coordinates.length ? '드래그 이동 · 두 손가락/± 확대·축소' : '표시할 GPS 경로가 없습니다. 좌표 데이터를 확인해 주세요.');
+        // 소스 메타데이터를 받은 첫 로딩 완료 시 한 번만 접습니다. 이후 사용자의 펼침은 유지합니다.
+        if (!attributionInitialized) {
+          const attribution = document.querySelector('#route-map .maplibregl-ctrl-attrib');
+          if (attribution?.classList.contains('maplibregl-compact-show')) {
+            attribution.querySelector('.maplibregl-ctrl-attrib-button')?.click();
+          }
+          attributionInitialized = true;
+        }
+        message(coordinates.length ? '' : '표시할 GPS 경로가 없습니다. 좌표 데이터를 확인해 주세요.');
       });
       map.getCanvas().addEventListener('webglcontextlost', () => {
         if (generation !== mapGeneration) return;

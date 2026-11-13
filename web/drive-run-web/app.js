@@ -37,8 +37,9 @@ function renderTrip(trip) {
   $('#course-name').textContent = displayText(trip.courseName);
   $('#result-title').textContent = planned ? 'PLANNED ROUTE' : 'DRIVE RECORD';
   $('#drive-date').textContent = planned
-    ? `계획 코스 · ${displayText(trip.tripId)}`
-    : `${shortDate(trip.startedAt)} · ${displayText(trip.region)} · ${displayText(trip.tripId)}`;
+    ? '계획 코스'
+    : `${shortDate(trip.startedAt)} · ${displayText(trip.region)}`;
+  $('#trip-id').textContent = `기록 ID · ${displayText(trip.tripId)}`;
   $('#route-map').setAttribute('aria-label', `${displayText(trip.courseName, '코스')} 지도`);
   const routeLabels = {demo: '데모 경로', planned: '계획 경로', recorded: '이동 경로'};
   $('#result-view .course-chip').textContent = typeof trip.routeType === 'string' && Object.hasOwn(routeLabels, trip.routeType)
