@@ -1,8 +1,8 @@
-# 인수인계: E 역할 (최나연)
+# 인수인계: E 역할
 
-> **Android Studio의 Claude에게:** 이 파일은 나연 님이 맡은 일 전체를 정리한 거예요. 나연 님과 작업할 때 이 내용을 기준으로 삼고, 레포의 `CLAUDE.md`, `CONTRIBUTING.md`, `README.md` 규칙을 함께 따라 주세요.
+> **Android Studio의 Claude에게:** 이 파일은 E 담당이 맡은 일 전체를 정리한 거예요. E 담당과 작업할 때 이 내용을 기준으로 삼고, 레포의 `CLAUDE.md`, `CONTRIBUTING.md`, `README.md` 규칙을 함께 따라 주세요.
 >
-> 시작할 때 이렇게 말하면 돼요: **"docs/handoff/role-e-nayeon.md 읽고 내 작업 도와줘"**
+> 시작할 때 이렇게 말하면 돼요: **"docs/handoff/role-e.md 읽고 내 작업 도와줘"**
 
 기준일: 2026-11-09(월). 마감: **2026-11-15(일)**.
 
@@ -18,19 +18,19 @@
 
 ### 팀 역할 (누구에게 물어볼지)
 
-| 역할 | 이름 | 담당 | 나와 관계 |
-|---|---|---|---|
-| A | 윤은빈 | 기획서, 폰 웹(결과, 친구 비교, QR), 테스트 체크리스트 | 결과 QR이 열 페이지 |
-| B | 윤수현 | 경로 프리셋, 경로 JSON 규격, DB | 코스 목록·모양 데이터 |
-| C | 서원준 | FastAPI 서버, 가상주행 | 화면이 부르는 API |
-| D | 성재원 | 인포 앱 코어(지도, 경로 안내, 주행 기록) | **같은 앱**, `core/` 담당 |
-| E | 최나연 | 인포 화면 UI, 일정, GitHub·Jira | 나 |
+| 역할 | 담당 | 나와 관계 |
+|---|---|---|
+| A | 기획서, 폰 웹(결과, 친구 비교, QR), 테스트 체크리스트 | 결과 QR이 열 페이지 |
+| B | 경로 프리셋, 경로 JSON 규격, DB | 코스 목록·모양 데이터 |
+| C | FastAPI 서버, 가상주행 | 화면이 부르는 API |
+| D | 인포 앱 코어(지도, 경로 안내, 주행 기록) | **같은 앱**, `core/` 담당 |
+| E | 인포 화면 UI, 일정, GitHub·Jira | 나 |
 
 ---
 
 ## 2. 🎫 내 Jira 티켓
 
-보드: https://choenayeon.atlassian.net/jira/software/projects/PLEOS/boards
+보드: 팀 Jira PLEOS 보드 (주소는 팀 안에서 공유)
 
 ### 인포 화면 UI (에픽 PLEOS-7)
 
@@ -43,7 +43,7 @@
 | PLEOS-45 | 주행 중 화면 | `docs/ui/page-5.png` |
 | PLEOS-46 | 결과 화면 + 결과 QR | `docs/ui/page-6.png` |
 
-`page-7`, `page-8`(폰 결과, 친구 비교)은 A 은빈 님의 폰 웹이에요.
+`page-7`, `page-8`(폰 결과, 친구 비교)은 A 담당의 폰 웹이에요.
 
 ### 일정·GitHub·Jira 관리 (에픽 PLEOS-1)
 
@@ -80,7 +80,7 @@
 
 ```
 app/src/main/java/.../
-├── core/        # D 재원 님 (SDK, 서버 통신, 주행 기록). 나는 고치지 않음
+├── core/        # D 담당 (SDK, 서버 통신, 주행 기록). 나는 고치지 않음
 └── ui/          # 나
     ├── region/      # PLEOS-42
     ├── courses/     # PLEOS-43
@@ -138,8 +138,8 @@ app/src/main/java/.../
 claude mcp add --scope user --transport http atlassian https://mcp.atlassian.com/v1/mcp
 ```
 
-`claude` 실행 → `/mcp` → atlassian → 로그인 → **choenayeon** 사이트 허용.
-나연 님이 사이트 관리자라서, **나연 님이 먼저 연결해야** 팀원들도 연결할 수 있어요.
+`claude` 실행 → `/mcp` → atlassian → 로그인 → 팀 Jira 사이트 허용.
+E 담당이 사이트 관리자라서, **E 담당이 먼저 연결해야** 팀원들도 연결할 수 있어요.
 
 ---
 
@@ -151,7 +151,7 @@ claude mcp add --scope user --transport http atlassian https://mcp.atlassian.com
 - [ ] 팀 단톡에 레포 링크, Jira 보드, 설명서 공유
 - [ ] PLEOS-13 일정표 확정: 11/15까지 날짜별로 정하고 각 티켓에 기한 넣기
 - [ ] 담당자 없는 티켓 4개 주인 정하기 (아래 8번)
-- [ ] 재원 님과 Android Studio 프로젝트(`android/`) 만들었는지 확인
+- [ ] D 담당과 Android Studio 프로젝트(`android/`) 만들었는지 확인
 - [ ] PLEOS-47 차량 UX 가이드 30분 훑기
 - [ ] `feature/PLEOS-42-region-input` 브랜치 만들고 지역 입력 화면 시작 (가짜 데이터)
 - [ ] 저녁: 첫 "보드 정리해줘"
@@ -182,7 +182,7 @@ claude mcp add --scope user --transport http atlassian https://mcp.atlassian.com
 ## 9. 🔗 링크
 
 - 레포: https://github.com/Nana2828/Pleos_application
-- Jira 보드: https://choenayeon.atlassian.net/jira/software/projects/PLEOS/boards
+- Jira 보드: 팀 Jira PLEOS 보드 (주소는 팀 안에서 공유)
 - Jira 설명서 (팀 공유용): https://claude.ai/artifact/EAP5pabdT676ErFte2A1fP
 - 시나리오: `docs/scenario-flow.md`
 - 역할: `docs/team-roles.md`

@@ -14,11 +14,11 @@ Pleos 공모전 팀 프로젝트(5명). 구조와 담당은 `README.md`, Git 규
 
 ## Jira 규칙
 
-- Jira 사이트: choenayeon.atlassian.net, 프로젝트 키: PLEOS
+- Jira 사이트: 팀 Jira (주소는 공개 저장소라 적지 않고 팀 안에서 공유), 프로젝트 키: PLEOS
 - 상태는 세 가지: 할 일 → 진행 중 → 완료
-- 역할 라벨: role-A(은빈, 기획·폰 웹), role-B(수현, 지도·DB),
-  role-C(원준, 서버·가상주행), role-D(재원, 인포 앱 코어),
-  role-E(나연, 인포 화면 UI·일정·GitHub·Jira 관리)
+- 역할 라벨: role-A(A 담당, 기획·폰 웹), role-B(B 담당, 지도·DB),
+  role-C(C 담당, 서버·가상주행), role-D(D 담당, 인포 앱 코어),
+  role-E(E 담당, 인포 화면 UI·일정·GitHub·Jira 관리)
 - 에픽: PLEOS-1 기획·관리, PLEOS-2 공유 JSON, PLEOS-3 지도·DB,
   PLEOS-4 FastAPI 서버, PLEOS-5 가상주행, PLEOS-6 인포 앱 코어,
   PLEOS-7 인포 화면 UI, PLEOS-8 폰 웹, PLEOS-9 Pleos 확인·리스크,

@@ -6,11 +6,11 @@
 
 | 폴더 | 내용 | 담당 |
 |---|---|---|
-| `android/` | 인포 앱 (Kotlin, Compose) | D 재원(`core/`), E 나연(`ui/`) |
-| `server/` | FastAPI 서버 | C 원준 |
-| `simulator/` | 가상주행 스크립트 | C 원준 |
-| `data/` | 경로 프리셋, DB 스키마 | B 수현 |
-| `web/` | 폰 웹 (결과, 친구 비교, QR) | A 은빈 |
+| `android/` | 인포 앱 (Kotlin, Compose) | D 담당(`core/`), E 담당(`ui/`) |
+| `server/` | FastAPI 서버 | C 담당 |
+| `simulator/` | 가상주행 스크립트 | C 담당 |
+| `data/` | 경로 프리셋, DB 스키마 | B 담당 |
+| `web/` | 폰 웹 (결과, 친구 비교, QR) | A 담당 |
 | `shared/` | 공유 JSON 규격 | B·C·D 함께 |
 | `docs/` | 기획·시나리오·역할 문서 | A·E |
 
@@ -41,7 +41,7 @@ git checkout -b feature/PLEOS-42-region-input
 2. PR 제목: `PLEOS-42 지역 입력 화면`
 3. 템플릿 칸을 채워요 (무엇을, 어떻게 확인했는지, 스크린샷).
 4. 리뷰어
-   - 기본: **E 나연** (매일 검토)
+   - 기본: **E 담당** (매일 검토)
    - `shared/` JSON을 바꾸면: **B·C·D 모두** 확인
    - 다른 사람 폴더를 건드리면: 그 폴더 담당자
 5. 머지는 **Squash and merge**. 머지한 뒤 Jira 티켓을 "완료"로 옮겨요.

@@ -1,6 +1,6 @@
 # 🗺️ data/ — 경로 프리셋, DB
 
-담당: B 수현
+담당: B 담당
 
 - 프리셋은 **모양 좌표(GeoJSON LineString) + 경유지 목록** 두 가지로 만들어요.
 - DB는 SQLite로 시작 (테이블: courses, drives, users, friends)

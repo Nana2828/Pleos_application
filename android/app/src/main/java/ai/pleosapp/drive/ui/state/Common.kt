@@ -4,8 +4,8 @@ package ai.pleosapp.drive.ui.state
  * 화면들이 같이 쓰는 값.
  *
  * 경계 규칙 (D·E 가안):
- * - D(재원)가 이 폴더(ui/state)의 UiState·Actions·ViewModel을 만든다.
- * - E(나연)는 화면(Composable)에서 UiState를 그대로 그리고, 버튼을 누르면 Actions를 부른다.
+ * - D 담당이 이 폴더(ui/state)의 UiState·Actions·ViewModel을 만든다.
+ * - E 담당은 화면(Composable)에서 UiState를 그대로 그리고, 버튼을 누르면 Actions를 부른다.
  * - 화면 문구(예: "연비"/"효율", 숫자 형식)는 E가 정한다. 여기에는 값과 단위만 둔다.
  */
 
