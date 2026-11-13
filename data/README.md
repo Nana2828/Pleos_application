@@ -3,5 +3,5 @@
 담당: B 담당
 
 - 프리셋은 **모양 좌표(GeoJSON LineString) + 경유지 목록** 두 가지로 만들어요.
-- DB는 SQLite로 시작 (테이블: courses, drives, users, friends)
+- DB는 SQLite로 시작 (테이블: courses). 주행 기록·사용자·친구는 데이터 처리 원칙에 따라 서버 DB에 두지 않아요.
 - `.sqlite3`, `.db` 파일은 올리지 않고, 만드는 스크립트를 올려요.
