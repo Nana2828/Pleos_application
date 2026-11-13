@@ -6,7 +6,7 @@
 
 <p align="center">
   차 안에서 모양 코스를 골라 달리며 지도에 그림을 그리고,<br/>
-  결과 QR로 친구와 기록을 비교하는 드라이브 앱 · <b>Pleos Drive</b>
+  결과 QR로 친구와 기록을 비교하는 드라이브 앱
 </p>
 
 <p align="center">
