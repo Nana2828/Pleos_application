@@ -20,11 +20,26 @@ if (resultWebUrl.isBlank()) {
     logger.warn("pleos.webUrl 이 없어요. 결과 QR을 쓰려면 android/local.properties 에 pleos.webUrl=http://<노트북 IP>:5173/ 을 넣으세요.")
 }
 
+val keystoreProps: Properties? = rootProject.file("keystore.properties")
+    .takeIf { it.isFile }
+    ?.let { f -> Properties().apply { f.inputStream().use { load(it) } } }
+
 android {
     namespace = "ai.pleosapp.drive"
     compileSdk = 34
     // AAOS 표준 Car API (android.car)
     useLibrary("android.car")
+
+    signingConfigs {
+        if (keystoreProps != null) {
+            create("release") {
+                storeFile = rootProject.file(keystoreProps.getProperty("storeFile"))
+                storePassword = keystoreProps.getProperty("storePassword")
+                keyAlias = keystoreProps.getProperty("keyAlias")
+                keyPassword = keystoreProps.getProperty("keyPassword")
+            }
+        }
+    }
 
     defaultConfig {
         applicationId = "ai.pleosapp.drive"
@@ -38,6 +53,9 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = false
+            if (keystoreProps != null) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
 
