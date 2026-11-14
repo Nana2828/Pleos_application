@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- 앱 이름은 팀 합의 후 바꾼다 -->
-    <string name="app_name">Pleos Drive</string>
+    <string name="app_name">I Drive, I Draw</string>
 </resources>

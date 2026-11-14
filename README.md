@@ -82,12 +82,12 @@ IDID(I drive, I draw)는 차량 인포테인먼트에서 지역과 모양 코스
 
 소스를 빌드하지 않고 바로 설치해 보려면 release APK를 그대로 쓰면 돼요.
 
-- **APK 파일 위치**: [`apk/I_Drive_I_Draw_IDID_release.apk`](apk/I_Drive_I_Draw_IDID_release.apk)
+- **APK 파일 위치**: [`apk/I_Drive_I_Draw_release.apk`](apk/I_Drive_I_Draw_release.apk)
 - **개발에 사용한 Pleos Connect 에뮬레이터**: Pleos Connect v2.1.0 (API 34, Automotive)
 - **화면 규격**: 2560 × 1440, 160dpi (Pleos Connect v2.1.0 기본 스킨)
 
 ```bash
-adb install -r apk/I_Drive_I_Draw_IDID_release.apk
+adb install -r apk/I_Drive_I_Draw_release.apk
 ```
 
 ## 실행 방법
